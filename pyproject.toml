@@ -1,7 +1,7 @@
 [project]
 name = "serverless-ticketing-notifications"
 version = "0.1.0"
-description = "Add your description here"
+description = "Serverless backend for ticketing, soft bookings, and multi-channel notifications"
 readme = "README.md"
 authors = [
     { name = "Filipe Rodrigues", email = "filipe.rds.dev@gmail.com" }
@@ -12,17 +12,18 @@ dependencies = [
     "pydantic>=2.13.4",
 ]
 
-[project.scripts]
-serverless-ticketing-notifications = "serverless_ticketing_notifications:main"
-
 [build-system]
 requires = ["uv_build>=0.11.27,<0.12.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "serverless_ticketing_notifications"
 
 [dependency-groups]
 dev = [
     "moto>=5.2.2",
     "pytest>=9.1.1",
+    "python-dotenv>=1.2.2",
     "ruff>=0.15.20",
     "ty>=0.0.57",
 ]
