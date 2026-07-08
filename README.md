@@ -427,10 +427,10 @@ sam local start-api
 
 ### Fase 1 — Base do Projeto
 
-* [ ] Criar estrutura inicial de pastas.
-* [ ] Configurar `pyproject.toml`.
-* [ ] Configurar ambiente com `uv`.
-* [ ] Configurar `pytest`.
+* [x] Criar estrutura inicial de pastas.
+* [x] Configurar `pyproject.toml`.
+* [x] Configurar ambiente com `uv`.
+* [x] Configurar `pytest`.
 * [ ] Criar primeiro teste unitário.
 * [ ] Garantir que domínio e casos de uso não dependem de AWS.
 
