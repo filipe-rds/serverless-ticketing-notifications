@@ -4,6 +4,43 @@ Backend serverless para emissão de ingressos, reservas temporárias e notifica�
 
 O projeto tem como objetivo aplicar conceitos de **Python**, **AWS**, **arquitetura serverless**, **Clean Architecture**, **SOLID**, **modelagem de domínio**, **testes automatizados** e **separação de responsabilidades** em um cenário próximo de um sistema real de alta concorrência.
 
+## Sumário
+
+- [Visão Geral](#visão-geral)
+- [Domínios do Sistema](#domínios-do-sistema)
+  - [Ticketing](#ticketing)
+  - [Notifications](#notifications)
+- [Arquitetura Planejada](#arquitetura-planejada)
+  - [Fluxo de Compra e Notificação](#fluxo-de-compra-e-notificação)
+- [Endpoints Planejados](#endpoints-planejados)
+- [Modelagem de Dados](#modelagem-de-dados)
+  - [Tabela `Ticket`](#tabela-ticket)
+  - [Tabela `Notification`](#tabela-notification)
+- [Regra de Cálculo de Preço](#regra-de-cálculo-de-preço)
+- [Estrutura de Pastas](#estrutura-de-pastas)
+  - [Responsabilidade das Camadas](#responsabilidade-das-camadas)
+- [Princípios Arquiteturais](#princípios-arquiteturais)
+- [Conceitos Praticados](#conceitos-praticados)
+  - [Clean Architecture](#clean-architecture)
+  - [SOLID](#solid)
+  - [Strategy Pattern](#strategy-pattern)
+  - [Adapter Pattern](#adapter-pattern)
+  - [Resiliência Serverless](#resiliência-serverless)
+  - [Result Pattern](#result-pattern)
+- [Tecnologias Planejadas](#tecnologias-planejadas)
+- [Testes](#testes)
+  - [Testes unitários](#testes-unitários)
+  - [Testes de integração](#testes-de-integração)
+- [Como Executar Localmente](#como-executar-localmente)
+  - [Pré-requisitos](#pré-requisitos)
+  - [Instalação](#instalação)
+  - [Execução dos testes](#execução-dos-testes)
+  - [Execução local com SAM](#execução-local-com-sam)
+- [Roadmap de Implementação](#roadmap-de-implementação)
+- [Critérios de Qualidade](#critérios-de-qualidade)
+- [Objetivo de Aprendizagem](#objetivo-de-aprendizagem)
+- [Status](#status)
+
 ---
 
 ## Visão Geral
@@ -467,4 +504,4 @@ O objetivo principal não é apenas construir uma API funcional, mas desenvolver
 
 Projeto em fase inicial de implementação.
 
-Este repositório será evoluído incrementalmente durante a residência tecnológica.
+Este repositório será evoluído incrementalmente durante o tempo.
