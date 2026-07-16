@@ -431,12 +431,12 @@ sam local start-api
 * [x] Configurar `pyproject.toml`.
 * [x] Configurar ambiente com `uv`.
 * [x] Configurar `pytest`.
-* [ ] Criar primeiro teste unitário.
-* [ ] Garantir que domínio e casos de uso não dependem de AWS.
+* [x] Criar primeiro teste unitário.
+* [x] Garantir que domínio e casos de uso não dependem de AWS.
 
 ### Fase 2 — Domínio de Ticketing
 
-* [ ] Criar entidades de evento, categoria de ingresso e reserva.
+* [x] Criar entidades de evento, categoria de ingresso e reserva.
 * [ ] Criar regras de estoque.
 * [ ] Criar cálculo de preço.
 * [ ] Criar casos de uso de listagem, reserva e checkout.
