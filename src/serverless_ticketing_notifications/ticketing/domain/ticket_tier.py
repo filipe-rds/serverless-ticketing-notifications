@@ -6,7 +6,7 @@ from serverless_ticketing_notifications.ticketing.domain.types import NonEmptySt
 
 
 class TicketTier(BaseModel):
-    model_config = ConfigDict(frozen=True, strict=True)
+    model_config = ConfigDict(strict=True)
 
     id: NonEmptyString
     event_id: NonEmptyString

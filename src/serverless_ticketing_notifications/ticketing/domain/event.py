@@ -4,10 +4,7 @@ from serverless_ticketing_notifications.ticketing.domain.types import NonEmptySt
 
 
 class Event(BaseModel):
-    model_config = ConfigDict(
-        frozen=True,
-        strict=True,
-    )
+    model_config = ConfigDict(strict=True)
 
     id: NonEmptyString
     name: NonEmptyString

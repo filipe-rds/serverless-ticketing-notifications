@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reservation(BaseModel):
-    model_config = ConfigDict(frozen=True, strict=True)
+    model_config = ConfigDict(strict=True)
 
     id: NonEmptyString
     user_id: NonEmptyString
