@@ -1,11 +1,9 @@
 import pytest
 from pydantic import ValidationError
 
-from serverless_ticketing_notifications.ticketing.domain.enums import (
-    ReservationStatus,
-)
 from serverless_ticketing_notifications.ticketing.domain.reservation import (
     Reservation,
+    ReservationStatus,
 )
 
 

@@ -1,7 +1,16 @@
-from serverless_ticketing_notifications.ticketing.domain.enums import ReservationStatus
 from typing import Annotated
-from serverless_ticketing_notifications.ticketing.domain.types import NonEmptyString
+from serverless_ticketing_notifications.ticketing.domain.constraints import (
+    NonEmptyString,
+)
 from pydantic import BaseModel, ConfigDict, Field
+from enum import Enum
+
+
+class ReservationStatus(Enum):
+    PENDING = "PENDING"
+    CONFIRMED = "CONFIRMED"
+    CANCELED = "CANCELED"
+    EXPIRED = "EXPIRED"
 
 
 class Reservation(BaseModel):

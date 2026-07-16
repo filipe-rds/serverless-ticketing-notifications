@@ -2,7 +2,9 @@ from typing import Annotated
 from pydantic import BaseModel, ConfigDict, Field
 from decimal import Decimal
 
-from serverless_ticketing_notifications.ticketing.domain.types import NonEmptyString
+from serverless_ticketing_notifications.ticketing.domain.constraints import (
+    NonEmptyString,
+)
 
 
 class TicketTier(BaseModel):

@@ -1,6 +1,8 @@
 from pydantic import BaseModel, ConfigDict
 
-from serverless_ticketing_notifications.ticketing.domain.types import NonEmptyString
+from serverless_ticketing_notifications.ticketing.domain.constraints import (
+    NonEmptyString,
+)
 
 
 class Event(BaseModel):
