@@ -1,3 +1,4 @@
+from pydantic import ValidationError
 import pytest
 from serverless_ticketing_notifications.ticketing.domain.event import Event
 
@@ -35,7 +36,7 @@ class TestId:
         ],
     )
     def test_should_reject_non_string_id(self, event_id: object) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Event(id=event_id, name="TEST")  # ty:ignore[invalid-argument-type]
 
     @pytest.mark.parametrize(
@@ -47,7 +48,7 @@ class TestId:
         ],
     )
     def test_should_reject_invalid_string_id(self, event_id: str) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Event(id=event_id, name="EVENT#01")
 
 
@@ -84,7 +85,7 @@ class TestName:
         ],
     )
     def test_should_reject_non_string_name(self, name: object) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Event(name=name, id="EVENT#01")  # ty:ignore[invalid-argument-type]
 
     @pytest.mark.parametrize(
@@ -96,5 +97,5 @@ class TestName:
         ],
     )
     def test_should_reject_invalid_string_name(self, name: object) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Event(name=name, id="EVENT#01")  # ty:ignore[invalid-argument-type]
