@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 
 from serverless_ticketing_notifications.ticketing.domain.enums import (
     ReservationStatus,
@@ -57,7 +58,7 @@ class TestId:
         self,
         reservation_id: object,
     ) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Reservation(
                 id=reservation_id,  # ty:ignore[invalid-argument-type]
                 user_id="USER#01",
@@ -78,7 +79,7 @@ class TestId:
         self,
         reservation_id: str,
     ) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Reservation(
                 id=reservation_id,
                 user_id="USER#01",
@@ -137,7 +138,7 @@ class TestUserId:
         self,
         user_id: object,
     ) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Reservation(
                 id="RESERVATION#01",
                 user_id=user_id,  # ty:ignore[invalid-argument-type]
@@ -158,7 +159,7 @@ class TestUserId:
         self,
         user_id: str,
     ) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Reservation(
                 id="RESERVATION#01",
                 user_id=user_id,
@@ -217,7 +218,7 @@ class TestTicketTierId:
         self,
         ticket_tier_id: object,
     ) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Reservation(
                 id="RESERVATION#01",
                 user_id="USER#01",
@@ -238,7 +239,7 @@ class TestTicketTierId:
         self,
         ticket_tier_id: str,
     ) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Reservation(
                 id="RESERVATION#01",
                 user_id="USER#01",
@@ -275,7 +276,7 @@ class TestQuantity:
         self,
         quantity: object,
     ) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Reservation(
                 id="RESERVATION#01",
                 user_id="USER#01",
@@ -296,7 +297,7 @@ class TestQuantity:
         self,
         quantity: int,
     ) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Reservation(
                 id="RESERVATION#01",
                 user_id="USER#01",
@@ -333,7 +334,7 @@ class TestStatus:
         self,
         status: object,
     ) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             Reservation(
                 id="RESERVATION#01",
                 user_id="USER#01",

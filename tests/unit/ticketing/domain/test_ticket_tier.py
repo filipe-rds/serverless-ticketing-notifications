@@ -156,7 +156,7 @@ class TestName:
             "    VIP   ",
         ],
     )
-    def should_strip_name_surrounding_whitespace(self, name: str) -> None:
+    def test_should_strip_name_surrounding_whitespace(self, name: str) -> None:
         ticket_tier = TicketTier(
             id="TICKET_TIER#01",
             event_id="EVENT#01",
@@ -245,7 +245,7 @@ class TestBasePrice:
                 id="TICKET_TIER#01",
                 event_id="EVENT#01",
                 name="VIP",
-                base_price=Decimal(-150.0),
+                base_price=base_price,  # ty:ignore[invalid-argument-type]
                 available_quantity=1000,
             )
 

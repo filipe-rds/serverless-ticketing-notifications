@@ -68,7 +68,7 @@ class TestName:
             "    TEST   ",
         ],
     )
-    def test_should_strip_id_surrounding_whitespace(self, name: str) -> None:
+    def test_should_strip_name_surrounding_whitespace(self, name: str) -> None:
         event = Event(id="EVENT#01", name=name)
 
         assert event.name is not None
@@ -96,6 +96,6 @@ class TestName:
             "        ",
         ],
     )
-    def test_should_reject_invalid_string_name(self, name: object) -> None:
+    def test_should_reject_invalid_string_name(self, name: str) -> None:
         with pytest.raises(ValidationError):
-            Event(name=name, id="EVENT#01")  # ty:ignore[invalid-argument-type]
+            Event(name=name, id="EVENT#01")
