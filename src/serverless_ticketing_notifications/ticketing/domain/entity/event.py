@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
-from serverless_ticketing_notifications.ticketing.domain.constraints import (
+from serverless_ticketing_notifications.ticketing.domain.type.non_empty_string import (
     NonEmptyString,
 )
 

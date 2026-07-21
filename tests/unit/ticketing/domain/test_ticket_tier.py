@@ -1,6 +1,8 @@
 from pydantic import ValidationError
 from decimal import Decimal
-from serverless_ticketing_notifications.ticketing.domain.ticket_tier import TicketTier
+from serverless_ticketing_notifications.ticketing.domain.entity.ticket_tier import (
+    TicketTier,
+)
 import pytest
 
 
