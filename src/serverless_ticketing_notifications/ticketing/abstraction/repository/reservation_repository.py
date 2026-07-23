@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from serverless_ticketing_notifications.ticketing.domain.reservation import (
+from serverless_ticketing_notifications.ticketing.domain.entity.reservation import (
     Reservation,
 )
 

@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from serverless_ticketing_notifications.ticketing.domain.event import Event
+from serverless_ticketing_notifications.ticketing.domain.entity.event import Event
 
 
 class EventRepository(Protocol):
