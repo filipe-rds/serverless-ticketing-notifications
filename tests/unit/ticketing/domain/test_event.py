@@ -1,6 +1,6 @@
 from pydantic import ValidationError
 import pytest
-from serverless_ticketing_notifications.ticketing.domain.entity.event import Event
+from serverless_ticketing_notifications.ticketing.domain.event import Event
 
 
 class TestId:
