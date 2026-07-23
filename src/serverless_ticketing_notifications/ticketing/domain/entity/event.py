@@ -10,3 +10,4 @@ class Event(BaseModel):
 
     id: NonEmptyString
     name: NonEmptyString
+    description: NonEmptyString
