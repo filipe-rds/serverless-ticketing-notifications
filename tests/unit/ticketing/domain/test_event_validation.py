@@ -1,17 +1,21 @@
-from pydantic import ValidationError
 import pytest
+from pydantic import ValidationError
+from datetime import datetime
 
 from serverless_ticketing_notifications.ticketing.domain.entity.event import Event
+
 
 def make_event(**overrides: object) -> Event:
     data: dict[str, object] = {
         "id": "EVENT#01",
         "name": "vnt.school",
         "description": "Description of vnt.school",
+        "starts_at": datetime(2027, 1, 1, 20, 0, 0),
     }
     data.update(overrides)
 
     return Event(**data)
+
 
 class TestId:
     def test_should_store_expected_value(self) -> None:
@@ -100,7 +104,8 @@ class TestName:
     def test_should_reject_invalid_string_name(self, name: str) -> None:
         with pytest.raises(ValidationError):
             make_event(name=name)
-            
+
+
 class TestDescription:
     def test_should_store_expected_value(self) -> None:
         event = make_event(description="Description of vnt.school")
@@ -117,7 +122,9 @@ class TestDescription:
             "    Description of vnt.school   ",
         ],
     )
-    def test_should_strip_description_surrounding_whitespace(self, description: str) -> None:
+    def test_should_strip_description_surrounding_whitespace(
+        self, description: str
+    ) -> None:
         event = make_event(description=description)
 
         assert event.description is not None
@@ -147,3 +154,27 @@ class TestDescription:
     def test_should_reject_invalid_string_description(self, description: str) -> None:
         with pytest.raises(ValidationError):
             make_event(description=description)
+
+
+class TestStartsAt:
+    def test_should_store_expected_value(self) -> None:
+        starts_at = datetime(2027, 1, 1, 20, 0, 0)
+
+        event = make_event(starts_at=starts_at)
+
+        assert event.starts_at is not None
+        assert type(event.starts_at) is datetime
+        assert event.starts_at == starts_at
+
+    @pytest.mark.parametrize(
+        "starts_at",
+        [
+            "2027-01-01T20:00:00",
+            True,
+            1,
+            object(),
+        ],
+    )
+    def test_should_reject_non_datetime_starts_at(self, starts_at: object) -> None:
+        with pytest.raises(ValidationError):
+            make_event(starts_at=starts_at)

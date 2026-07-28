@@ -1,0 +1,16 @@
+from typing import Protocol
+
+from serverless_ticketing_notifications.ticketing.domain.entity.ticket_category import (
+    TicketCategory,
+)
+
+
+
+class TicketCategoryRepository(Protocol):
+    def save(self, ticket_tier: TicketCategory) -> None: ...
+    def delete(self, ticket_tier: TicketCategory) -> None: ...
+    def find_all(self) -> tuple[TicketCategory, ...]: ...
+    def find_by_id(self, ticket_tier_id: int) -> TicketCategory | None: ...
+    def find_by_event_and_category(
+        self, event_id: str, category: str
+    ) -> TicketCategory | None: ...

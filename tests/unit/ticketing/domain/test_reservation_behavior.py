@@ -12,7 +12,8 @@ def pending_reservation():
         status=ReservationStatus.PENDING,
         id="RESERVATION#01",
         user_id="USER#01",
-        ticket_tier_id="TICKET_TIER#01",
+        event_id="EVENT#01",
+        ticket_category_id="TICKET_CATEGORY#01",
         quantity=1,
     )
 

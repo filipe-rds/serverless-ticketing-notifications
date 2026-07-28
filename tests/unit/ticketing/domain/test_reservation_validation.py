@@ -11,7 +11,8 @@ def make_reservation(**overrides: object) -> Reservation:
     data: dict[str, object] = {
         "id": "RESERVATION#01",
         "user_id": "USER#01",
-        "ticket_tier_id": "TICKET_TIER#01",
+        "event_id": "EVENT#01",
+        "ticket_category_id": "TICKET_CATEGORY#01",
         "quantity": 1,
         "status": ReservationStatus.PENDING,
     }
@@ -44,15 +45,7 @@ class TestId:
 
         assert reservation.id == "RESERVATION#01"
 
-    @pytest.mark.parametrize(
-        "reservation_id",
-        [
-            True,
-            10,
-            1.0,
-            object(),
-        ],
-    )
+    @pytest.mark.parametrize("reservation_id", [True, 10, 1.0, object()])
     def test_should_reject_non_string_id(
         self,
         reservation_id: object,
@@ -60,14 +53,7 @@ class TestId:
         with pytest.raises(ValidationError):
             make_reservation(id=reservation_id)
 
-    @pytest.mark.parametrize(
-        "reservation_id",
-        [
-            "",
-            " ",
-            "   ",
-        ],
-    )
+    @pytest.mark.parametrize("reservation_id", ["", " ", "   "])
     def test_should_reject_invalid_string_id(
         self,
         reservation_id: str,
@@ -100,15 +86,7 @@ class TestUserId:
 
         assert reservation.user_id == "USER#01"
 
-    @pytest.mark.parametrize(
-        "user_id",
-        [
-            True,
-            10,
-            1.0,
-            object(),
-        ],
-    )
+    @pytest.mark.parametrize("user_id", [True, 10, 1.0, object()])
     def test_should_reject_non_string_user_id(
         self,
         user_id: object,
@@ -116,14 +94,7 @@ class TestUserId:
         with pytest.raises(ValidationError):
             make_reservation(user_id=user_id)
 
-    @pytest.mark.parametrize(
-        "user_id",
-        [
-            "",
-            " ",
-            "   ",
-        ],
-    )
+    @pytest.mark.parametrize("user_id", ["", " ", "   "])
     def test_should_reject_invalid_string_user_id(
         self,
         user_id: str,
@@ -132,60 +103,86 @@ class TestUserId:
             make_reservation(user_id=user_id)
 
 
-class TestTicketTierId:
+class TestEventId:
     def test_should_store_expected_value(self) -> None:
-        reservation = make_reservation(ticket_tier_id="TICKET_TIER#01")
+        reservation = make_reservation(event_id="EVENT#01")
 
-        assert reservation.ticket_tier_id is not None
-        assert type(reservation.ticket_tier_id) is str
-        assert reservation.ticket_tier_id == "TICKET_TIER#01"
+        assert reservation.event_id is not None
+        assert type(reservation.event_id) is str
+        assert reservation.event_id == "EVENT#01"
 
     @pytest.mark.parametrize(
-        "ticket_tier_id",
+        "event_id",
         [
-            "TICKET_TIER#01       ",
-            "       TICKET_TIER#01",
-            "    TICKET_TIER#01   ",
+            "EVENT#01       ",
+            "       EVENT#01",
+            "    EVENT#01   ",
         ],
     )
-    def test_should_strip_ticket_tier_id_surrounding_whitespace(
+    def test_should_strip_event_id_surrounding_whitespace(
         self,
-        ticket_tier_id: str,
+        event_id: str,
     ) -> None:
-        reservation = make_reservation(ticket_tier_id=ticket_tier_id)
+        reservation = make_reservation(event_id=event_id)
 
-        assert reservation.ticket_tier_id == "TICKET_TIER#01"
+        assert reservation.event_id == "EVENT#01"
 
-    @pytest.mark.parametrize(
-        "ticket_tier_id",
-        [
-            True,
-            10,
-            1.0,
-            object(),
-        ],
-    )
-    def test_should_reject_non_string_ticket_tier_id(
+    @pytest.mark.parametrize("event_id", [True, 10, 1.0, object()])
+    def test_should_reject_non_string_event_id(
         self,
-        ticket_tier_id: object,
+        event_id: object,
     ) -> None:
         with pytest.raises(ValidationError):
-            make_reservation(ticket_tier_id=ticket_tier_id)
+            make_reservation(event_id=event_id)
 
-    @pytest.mark.parametrize(
-        "ticket_tier_id",
-        [
-            "",
-            " ",
-            "   ",
-        ],
-    )
-    def test_should_reject_invalid_string_ticket_tier_id(
+    @pytest.mark.parametrize("event_id", ["", " ", "   "])
+    def test_should_reject_invalid_string_event_id(
         self,
-        ticket_tier_id: str,
+        event_id: str,
     ) -> None:
         with pytest.raises(ValidationError):
-            make_reservation(ticket_tier_id=ticket_tier_id)
+            make_reservation(event_id=event_id)
+
+
+class TestTicketCategoryId:
+    def test_should_store_expected_value(self) -> None:
+        reservation = make_reservation(ticket_category_id="TICKET_CATEGORY#01")
+
+        assert reservation.ticket_category_id is not None
+        assert type(reservation.ticket_category_id) is str
+        assert reservation.ticket_category_id == "TICKET_CATEGORY#01"
+
+    @pytest.mark.parametrize(
+        "ticket_category_id",
+        [
+            "TICKET_CATEGORY#01       ",
+            "       TICKET_CATEGORY#01",
+            "    TICKET_CATEGORY#01   ",
+        ],
+    )
+    def test_should_strip_ticket_category_id_surrounding_whitespace(
+        self,
+        ticket_category_id: str,
+    ) -> None:
+        reservation = make_reservation(ticket_category_id=ticket_category_id)
+
+        assert reservation.ticket_category_id == "TICKET_CATEGORY#01"
+
+    @pytest.mark.parametrize("ticket_category_id", [True, 10, 1.0, object()])
+    def test_should_reject_non_string_ticket_category_id(
+        self,
+        ticket_category_id: object,
+    ) -> None:
+        with pytest.raises(ValidationError):
+            make_reservation(ticket_category_id=ticket_category_id)
+
+    @pytest.mark.parametrize("ticket_category_id", ["", " ", "   "])
+    def test_should_reject_invalid_string_ticket_category_id(
+        self,
+        ticket_category_id: str,
+    ) -> None:
+        with pytest.raises(ValidationError):
+            make_reservation(ticket_category_id=ticket_category_id)
 
 
 class TestQuantity:
@@ -196,15 +193,7 @@ class TestQuantity:
         assert type(reservation.quantity) is int
         assert reservation.quantity == 2
 
-    @pytest.mark.parametrize(
-        "quantity",
-        [
-            True,
-            1.0,
-            "1",
-            object(),
-        ],
-    )
+    @pytest.mark.parametrize("quantity", [True, 1.0, "1", object()])
     def test_should_reject_quantity_when_not_integer(
         self,
         quantity: object,
@@ -212,14 +201,7 @@ class TestQuantity:
         with pytest.raises(ValidationError):
             make_reservation(quantity=quantity)
 
-    @pytest.mark.parametrize(
-        "quantity",
-        [
-            0,
-            -1,
-            -10,
-        ],
-    )
+    @pytest.mark.parametrize("quantity", [0, -1, -10])
     def test_should_reject_quantity_when_less_than_one(
         self,
         quantity: int,
@@ -236,15 +218,7 @@ class TestStatus:
         assert type(reservation.status) is ReservationStatus
         assert reservation.status is ReservationStatus.PENDING
 
-    @pytest.mark.parametrize(
-        "status",
-        [
-            "PENDING",
-            True,
-            1,
-            object(),
-        ],
-    )
+    @pytest.mark.parametrize("status", ["PENDING", True, 1, object()])
     def test_should_reject_invalid_status(
         self,
         status: object,

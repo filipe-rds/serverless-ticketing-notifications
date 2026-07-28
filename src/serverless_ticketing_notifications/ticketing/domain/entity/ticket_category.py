@@ -1,13 +1,14 @@
-from typing import Annotated
-from pydantic import BaseModel, ConfigDict, Field, model_validator
 from decimal import Decimal
+from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from serverless_ticketing_notifications.ticketing.domain.type.non_empty_string import (
     NonEmptyString,
 )
 
 
-class TicketTier(BaseModel):
+class TicketCategory(BaseModel):
     model_config = ConfigDict(strict=True)
 
     id: NonEmptyString
@@ -17,10 +18,11 @@ class TicketTier(BaseModel):
     total_quantity: Annotated[int, Field(ge=1)]
     available_quantity: Annotated[
         int, Field(ge=0)
-    ]  # The number of tickets available for sale
+    ]
     reserved_quantity: Annotated[
         int, Field(ge=0)
-    ]  # The number of tickets that are reserved but not yet confirmed
+    ]
+    
 
     @property
     def sold_quantity(self) -> int:
@@ -31,7 +33,7 @@ class TicketTier(BaseModel):
         return self.available_quantity - self.reserved_quantity
 
     @model_validator(mode="after")
-    def validate_quantities(self) -> "TicketTier":
+    def validate_quantities(self) -> "TicketCategory":
         if self.available_quantity > self.total_quantity:
             raise ValueError(
                 "Available quantity must be less than or equal to total quantity."

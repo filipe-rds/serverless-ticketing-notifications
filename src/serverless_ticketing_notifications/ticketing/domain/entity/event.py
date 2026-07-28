@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
 
 from serverless_ticketing_notifications.ticketing.domain.type.non_empty_string import (
@@ -11,3 +13,4 @@ class Event(BaseModel):
     id: NonEmptyString
     name: NonEmptyString
     description: NonEmptyString
+    starts_at: datetime

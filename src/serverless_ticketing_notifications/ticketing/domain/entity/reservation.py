@@ -1,9 +1,11 @@
+from enum import Enum
 from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, Field
+
 from serverless_ticketing_notifications.ticketing.domain.type.non_empty_string import (
     NonEmptyString,
 )
-from pydantic import BaseModel, ConfigDict, Field
-from enum import Enum
 
 
 class ReservationStatus(Enum):
@@ -18,7 +20,8 @@ class Reservation(BaseModel):
 
     id: NonEmptyString
     user_id: NonEmptyString
-    ticket_tier_id: NonEmptyString
+    event_id: NonEmptyString
+    ticket_category_id: NonEmptyString
     quantity: Annotated[int, Field(ge=1)]
     status: Annotated[ReservationStatus, Field(default=ReservationStatus.PENDING)]
 
