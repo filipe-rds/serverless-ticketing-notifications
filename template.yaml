@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless ticketing notifications API
+
+Globals:
+  Function:
+    Runtime: python3.14
+    Timeout: 10
+    MemorySize: 128
+
+Resources:
+  AdminApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: serverless_ticketing_notifications.ticketing.infrastructure.http.admin.handler.lambda_handler
+      Events:
+        AdminApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /admin/{proxy+}
+            Method: ANY
+  
+  CustomerApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: serverless_ticketing_notifications.ticketing.infrastructure.http.customer.handler.lambda_handler
+      Events:
+        ListEventsRoute:
+          Type: HttpApi
+          Properties:
+            Path: /events
+            Method: GET
+        
+        EventsProxyRoute:
+          Type: HttpApi
+          Properties:
+            Path: /events/{proxy+}
+            Method: ANY
+
+        ReservationsProxyRoute:
+          Type: HttpApi
+          Properties:
+            Path: /reservations/{proxy+}
+            Method: ANY
+
+Outputs:
+  AdminApiFunction:
+    Description: Admin API Lambda Function ARN
+    Value: !GetAtt AdminApiFunction.Arn
+
+  CustomerApiFunction:
+    Description: Customer API Lambda Function ARN
+    Value: !GetAtt CustomerApiFunction.Arn
