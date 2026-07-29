@@ -16,13 +16,8 @@ class TicketCategory(BaseModel):
     name: NonEmptyString
     base_price: Annotated[Decimal, Field(ge=0)]
     total_quantity: Annotated[int, Field(ge=1)]
-    available_quantity: Annotated[
-        int, Field(ge=0)
-    ]
-    reserved_quantity: Annotated[
-        int, Field(ge=0)
-    ]
-    
+    available_quantity: Annotated[int, Field(ge=0)]
+    reserved_quantity: Annotated[int, Field(ge=0)]
 
     @property
     def sold_quantity(self) -> int:

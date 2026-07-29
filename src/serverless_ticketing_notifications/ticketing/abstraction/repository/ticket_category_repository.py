@@ -5,7 +5,6 @@ from serverless_ticketing_notifications.ticketing.domain.entity.ticket_category 
 )
 
 
-
 class TicketCategoryRepository(Protocol):
     def save(self, ticket_tier: TicketCategory) -> None: ...
     def delete(self, ticket_tier: TicketCategory) -> None: ...

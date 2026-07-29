@@ -181,9 +181,7 @@ class TestAvailableQuantity:
             make_ticket_category(available_quantity=-1000)
 
     @pytest.mark.parametrize("available_quantity", [1000.0, "1000", object()])
-    def test_should_reject_non_integer_value(
-        self, available_quantity: object
-    ) -> None:
+    def test_should_reject_non_integer_value(self, available_quantity: object) -> None:
         with pytest.raises(ValidationError):
             make_ticket_category(available_quantity=available_quantity)
 
@@ -209,9 +207,7 @@ class TestReservedQuantity:
             make_ticket_category(reserved_quantity=-1)
 
     @pytest.mark.parametrize("reserved_quantity", [1000.0, "1000", object()])
-    def test_should_reject_non_integer_value(
-        self, reserved_quantity: object
-    ) -> None:
+    def test_should_reject_non_integer_value(self, reserved_quantity: object) -> None:
         with pytest.raises(ValidationError):
             make_ticket_category(reserved_quantity=reserved_quantity)
 
