@@ -1,30 +1,40 @@
-from aws_lambda_powertools import Tracer
+import json
+
 from aws_lambda_powertools.event_handler.router import APIGatewayRouter
 
-tracer = Tracer()
 router = APIGatewayRouter()
 
+
 @router.get("/events/<event_id>")
-@tracer.capture_method
 def get_event(event_id: str):
-    pass
+    return {
+        "statusCode": 200,
+        "headers": {"Content-Type": "application/json"},
+        "body": json.dumps(
+            {
+                "controller": "Customer",
+                "message": "Customer controller is running!",
+                "route": f"/events/{event_id}",
+            }
+        ),
+    }
+
 
 @router.post("/events")
-@tracer.capture_method
-def create_event(event: dict):
+def create_event():
     pass
 
+
 @router.patch("/events/<event_id>")
-@tracer.capture_method
 def update_event(event_id: str, event: dict):
     pass
 
+
 @router.delete("/events/<event_id>")
-@tracer.capture_method
 def remove_event(event_id: str):
     pass
 
+
 @router.get("/events")
-@tracer.capture_method
 def list_events():
     pass
