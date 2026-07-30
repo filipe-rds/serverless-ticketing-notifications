@@ -13,10 +13,10 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/
-      Handler: serverless_ticketing_notifications.ticketing.infrastructure.http.admin.handler.lambda_handler
+      Handler: serverless_ticketing_notifications.ticketing.infrastructure.api.admin.handler.lambda_handler
       Events:
         AdminApiEvent:
-          Type: HttpApi
+          Type: Api
           Properties:
             Path: /admin/{proxy+}
             Method: ANY
@@ -25,22 +25,22 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/
-      Handler: serverless_ticketing_notifications.ticketing.infrastructure.http.customer.handler.lambda_handler
+      Handler: serverless_ticketing_notifications.ticketing.infrastructure.api.customer.handler.lambda_handler
       Events:
         ListEventsRoute:
-          Type: HttpApi
+          Type: Api
           Properties:
             Path: /events
             Method: GET
         
         EventsProxyRoute:
-          Type: HttpApi
+          Type: Api
           Properties:
             Path: /events/{proxy+}
             Method: ANY
 
         ReservationsProxyRoute:
-          Type: HttpApi
+          Type: Api
           Properties:
             Path: /reservations/{proxy+}
             Method: ANY
