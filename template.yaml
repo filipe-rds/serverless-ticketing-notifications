@@ -2,6 +2,15 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Serverless ticketing notifications API
 
+Parameters:
+  ApiStageName:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    Description: API Gateway stage name
+
 Globals:
   Function:
     Runtime: python3.14
@@ -12,7 +21,7 @@ Resources:
   TicketingApi:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: prod
+      StageName: !Ref ApiStageName
 
   AdminApiFunction:
     Type: AWS::Serverless::Function
@@ -20,12 +29,40 @@ Resources:
       CodeUri: src/
       Handler: serverless_ticketing_notifications.ticketing.infrastructure.api.admin.handler.lambda_handler
       Events:
-        AdminApiEvent:
+        ListAdminEventsRoute:
           Type: Api
           Properties:
             RestApiId: !Ref TicketingApi
-            Path: /admin/{proxy+}
-            Method: ANY
+            Path: /admin/events
+            Method: GET
+
+        CreateAdminEventRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TicketingApi
+            Path: /admin/events
+            Method: POST
+
+        GetAdminEventRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TicketingApi
+            Path: /admin/events/{event_id}
+            Method: GET
+
+        UpdateAdminEventRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TicketingApi
+            Path: /admin/events/{event_id}
+            Method: PATCH
+
+        DeleteAdminEventRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TicketingApi
+            Path: /admin/events/{event_id}
+            Method: DELETE
   
   CustomerApiFunction:
     Type: AWS::Serverless::Function
@@ -40,25 +77,36 @@ Resources:
             Path: /events
             Method: GET
         
-        EventsProxyRoute:
+        GetEventTicketsRoute:
           Type: Api
           Properties:
             RestApiId: !Ref TicketingApi
-            Path: /events/{proxy+}
-            Method: ANY
+            Path: /events/{event_id}/tickets
+            Method: GET
 
-        ReservationsProxyRoute:
+        CreateEventReservationRoute:
           Type: Api
           Properties:
             RestApiId: !Ref TicketingApi
-            Path: /reservations/{proxy+}
-            Method: ANY
+            Path: /events/{event_id}/reservations
+            Method: POST
+
+        CreateReservationCheckoutRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TicketingApi
+            Path: /reservations/{reservation_id}/checkout
+            Method: POST
 
 Outputs:
-  AdminApiFunction:
-    Description: Admin API Lambda Function ARN
-    Value: !GetAtt AdminApiFunction.Arn
+  ApiId:
+    Description: Ticketing API Gateway id
+    Value: !Ref TicketingApi
 
-  CustomerApiFunction:
-    Description: Customer API Lambda Function ARN
-    Value: !GetAtt CustomerApiFunction.Arn
+  ApiStage:
+    Description: Ticketing API Gateway stage
+    Value: !Ref ApiStageName
+
+  ApiUrl:
+    Description: Ticketing API Gateway base URL
+    Value: !Sub "https://${TicketingApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}"

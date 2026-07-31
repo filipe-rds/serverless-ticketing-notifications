@@ -77,33 +77,20 @@ build_package() {
     cleanup_requirements
 }
 
-get_api_id() {
-    aws_cmd cloudformation describe-stack-resource \
+get_stack_output() {
+    aws_cmd cloudformation describe-stacks \
         --stack-name "$STACK_NAME" \
-        --logical-resource-id TicketingApi \
-        --query "StackResourceDetail.PhysicalResourceId" \
-        --output text
-}
-
-get_api_stage() {
-    aws_cmd apigateway get-stages \
-        --rest-api-id "$1" \
-        --query "item[?stageName=='prod'].stageName | [0]" \
+        --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue | [0]" \
         --output text
 }
 
 print_api_url() {
-    API_ID="$(get_api_id)"
-    API_STAGE="$(get_api_stage "$API_ID")"
-
-    if [ "$API_STAGE" = "None" ] || [ -z "$API_STAGE" ]; then
-        API_STAGE="prod"
-    fi
-
     if [ "$AWS_TARGET" = "local" ]; then
+        API_ID="$(get_stack_output ApiId)"
+        API_STAGE="$(get_stack_output ApiStage)"
         API_URL="$AWS_LOCAL_ENDPOINT/restapis/$API_ID/$API_STAGE/_user_request_"
     else
-        API_URL="https://$API_ID.execute-api.$AWS_REGION.amazonaws.com/$API_STAGE"
+        API_URL="$(get_stack_output ApiUrl)"
     fi
 
     printf "\nAPI Gateway URL:\n%s\n\n" "$API_URL"
@@ -127,6 +114,7 @@ deploy_local() {
         --template-file .aws-sam/build/template.yaml \
         --stack-name "$STACK_NAME" \
         --capabilities CAPABILITY_IAM \
+        --parameter-overrides ApiStageName="$API_STAGE" \
         --resolve-s3 false \
         --s3-bucket local-bucket \
         --guided
@@ -142,6 +130,7 @@ deploy_remote() {
         --template-file .aws-sam/build/template.yaml \
         --stack-name "$STACK_NAME" \
         --capabilities CAPABILITY_IAM \
+        --parameter-overrides ApiStageName="$API_STAGE" \
         --guided
 
     print_api_url
@@ -171,6 +160,7 @@ AWS_LOCAL_ENDPOINT="${AWS_LOCAL_ENDPOINT:-http://localhost:4566}"
 STACK_NAME="${STACK_NAME:-serverless-ticketing-notifications}"
 TEMPLATE_FILE="${TEMPLATE_FILE:-template.yaml}"
 SAM_LOCAL_PORT="${SAM_LOCAL_PORT:-3000}"
+API_STAGE="${API_STAGE:-dev}"
 REQUIREMENTS_FILE="src/requirements.txt"
 
 trap cleanup_requirements EXIT HUP INT TERM
