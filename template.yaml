@@ -9,6 +9,11 @@ Globals:
     MemorySize: 128
 
 Resources:
+  TicketingApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+
   AdminApiFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -18,6 +23,7 @@ Resources:
         AdminApiEvent:
           Type: Api
           Properties:
+            RestApiId: !Ref TicketingApi
             Path: /admin/{proxy+}
             Method: ANY
   
@@ -30,18 +36,21 @@ Resources:
         ListEventsRoute:
           Type: Api
           Properties:
+            RestApiId: !Ref TicketingApi
             Path: /events
             Method: GET
         
         EventsProxyRoute:
           Type: Api
           Properties:
+            RestApiId: !Ref TicketingApi
             Path: /events/{proxy+}
             Method: ANY
 
         ReservationsProxyRoute:
           Type: Api
           Properties:
+            RestApiId: !Ref TicketingApi
             Path: /reservations/{proxy+}
             Method: ANY
 
