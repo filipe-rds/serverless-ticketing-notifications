@@ -2,7 +2,7 @@ AWS_TARGET ?= local
 AWS_LOCAL_ENDPOINT ?= http://localhost:4566
 TEMPLATE_FILE ?= template.yaml
 
-.PHONY: format lint typecheck test check sam-validate sam-local deploy-local deploy-remote ministack-health show-config
+.PHONY: format lint typecheck test check sam-validate sam-local deploy-local deploy-remote delete-local delete-remote ministack-health show-config
 
 format:
 	uv run ruff format
@@ -29,6 +29,12 @@ deploy-local:
 
 deploy-remote:
 	./scripts/sam.sh deploy-remote
+
+delete-local:
+	./scripts/sam.sh delete-local
+
+delete-remote:
+	./scripts/sam.sh delete-remote
 
 ministack-health:
 	curl $(AWS_LOCAL_ENDPOINT)/_ministack/health
