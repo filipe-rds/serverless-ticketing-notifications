@@ -138,7 +138,7 @@ run_local_api() {
     build_package
 
     sam_cmd local start-api \
-        --template .aws-sam/build/template.yaml \
+        --template "$BUILT_TEMPLATE_FILE" \
         --port "$SAM_LOCAL_PORT"
 }
 
@@ -155,14 +155,14 @@ deploy() {
         sam_cmd deploy \
             --config-file "$SAM_CONFIG_FILE" \
             --config-env "$SAM_CONFIG_ENV" \
-            --template-file .aws-sam/build/template.yaml \
+            --template-file "$BUILT_TEMPLATE_FILE" \
             --stack-name "$STACK_NAME" \
             --s3-bucket "$LOCAL_ARTIFACT_BUCKET"
     else
         sam_cmd deploy \
             --config-file "$SAM_CONFIG_FILE" \
             --config-env "$SAM_CONFIG_ENV" \
-            --template-file .aws-sam/build/template.yaml \
+            --template-file "$BUILT_TEMPLATE_FILE" \
             --stack-name "$STACK_NAME"
     fi
 
@@ -191,6 +191,7 @@ PROJECT_NAME="serverless-ticketing-notifications"
 AWS_REGION="sa-east-1"
 AWS_LOCAL_ENDPOINT="http://localhost:4566"
 TEMPLATE_FILE="template.yaml"
+BUILT_TEMPLATE_FILE="$PROJECT_ROOT/.aws-sam/build/template.yaml"
 SAM_LOCAL_PORT="3000"
 LOCAL_ARTIFACT_BUCKET="local-bucket"
 SAM_CONFIG_FILE="$PROJECT_ROOT/samconfig.yaml"
