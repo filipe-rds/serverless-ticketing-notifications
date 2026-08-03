@@ -1,8 +1,11 @@
-AWS_TARGET ?= local
-AWS_LOCAL_ENDPOINT ?= http://localhost:4566
-TEMPLATE_FILE ?= template.yaml
+ifneq (,$(wildcard .env))
+include .env
+endif
 
-.PHONY: format lint typecheck test check sam-validate sam-local deploy-local deploy-remote delete-local delete-remote ministack-health show-config
+ENV ?= local
+STAGE ?= dev
+
+.PHONY: format lint typecheck test check sam-validate sam-local deploy delete ministack-health show-config
 
 format:
 	uv run ruff format
@@ -19,27 +22,20 @@ test:
 check: format lint typecheck test
 
 sam-validate:
-	sam validate --template-file $(TEMPLATE_FILE)
+	sam validate --template-file template.yaml
 
 sam-local:
-	./scripts/sam.sh local
+	./scripts/sam.sh local $(STAGE)
 
-deploy-local:
-	./scripts/sam.sh deploy-local
+deploy:
+	./scripts/sam.sh deploy $(ENV) $(STAGE)
 
-deploy-remote:
-	./scripts/sam.sh deploy-remote
-
-delete-local:
-	./scripts/sam.sh delete-local
-
-delete-remote:
-	./scripts/sam.sh delete-remote
+delete:
+	./scripts/sam.sh delete $(ENV) $(STAGE)
 
 ministack-health:
-	curl $(AWS_LOCAL_ENDPOINT)/_ministack/health
+	curl http://localhost:4566/_ministack/health
 
 show-config:
-	@echo "AWS_TARGET=$(AWS_TARGET)"
-	@echo "AWS_LOCAL_ENDPOINT=$(AWS_LOCAL_ENDPOINT)"
-	@echo "TEMPLATE_FILE=$(TEMPLATE_FILE)"
+	@echo "ENV=$(ENV)"
+	@echo "STAGE=$(STAGE)"

@@ -8,30 +8,27 @@ PROJECT_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 load_env() {
-    if [ -n "${ENV_FILE:-}" ] && [ -f "$ENV_FILE" ]; then
-        set -a
-        case "$ENV_FILE" in
-            */*) . "$ENV_FILE" ;;
-            *) . "./$ENV_FILE" ;;
-        esac
-        set +a
-    elif [ -f ".env" ]; then
+    if [ -f ".env" ]; then
         set -a
         . "./.env"
         set +a
     fi
 }
 
+local_aws_env() {
+    env -u AWS_PROFILE \
+        AWS_SDK_LOAD_CONFIG=0 \
+        AWS_ACCESS_KEY_ID=test \
+        AWS_SECRET_ACCESS_KEY=test \
+        AWS_DEFAULT_REGION="$AWS_REGION" \
+        AWS_REGION="$AWS_REGION" \
+        AWS_ENDPOINT_URL="$AWS_LOCAL_ENDPOINT" \
+        "$@"
+}
+
 sam_cmd() {
     if [ "$AWS_TARGET" = "local" ]; then
-        env -u AWS_PROFILE \
-            AWS_SDK_LOAD_CONFIG=0 \
-            AWS_ACCESS_KEY_ID=test \
-            AWS_SECRET_ACCESS_KEY=test \
-            AWS_DEFAULT_REGION="$AWS_REGION" \
-            AWS_REGION="$AWS_REGION" \
-            AWS_ENDPOINT_URL="$AWS_LOCAL_ENDPOINT" \
-            sam "$@"
+        local_aws_env sam "$@"
     elif [ "$AWS_TARGET" = "remote" ]; then
         sam "$@"
     else
@@ -42,15 +39,9 @@ sam_cmd() {
 
 aws_cmd() {
     if [ "$AWS_TARGET" = "local" ]; then
-        env -u AWS_PROFILE \
-            AWS_SDK_LOAD_CONFIG=0 \
-            AWS_ACCESS_KEY_ID=test \
-            AWS_SECRET_ACCESS_KEY=test \
-            AWS_DEFAULT_REGION="$AWS_REGION" \
-            AWS_REGION="$AWS_REGION" \
-            aws --endpoint-url="$AWS_LOCAL_ENDPOINT" "$@"
+        local_aws_env aws --endpoint-url="$AWS_LOCAL_ENDPOINT" "$@"
     elif [ "$AWS_TARGET" = "remote" ]; then
-        aws "$@"
+        aws --region "$AWS_REGION" "$@"
     else
         echo "AWS_TARGET must be 'local' or 'remote'." >&2
         exit 2
@@ -84,6 +75,51 @@ get_stack_output() {
         --output text
 }
 
+default_stack_name() {
+    if [ "$AWS_TARGET" = "local" ]; then
+        printf "%s" "$PROJECT_NAME-local-$API_STAGE"
+    else
+        printf "%s" "$PROJECT_NAME-$API_STAGE"
+    fi
+}
+
+default_sam_config_env() {
+    if [ "$AWS_TARGET" = "local" ]; then
+        printf "%s" "local-$API_STAGE"
+    else
+        printf "%s" "$API_STAGE"
+    fi
+}
+
+ensure_local_bucket() {
+    aws_cmd s3 mb "s3://$LOCAL_ARTIFACT_BUCKET" 2>/dev/null || true
+}
+
+validate_stage() {
+    case "$API_STAGE" in
+        dev | prod) ;;
+        *)
+            echo "STAGE must be 'dev' or 'prod'." >&2
+            exit 2
+            ;;
+    esac
+}
+
+validate_target() {
+    case "$AWS_TARGET" in
+        local | remote) ;;
+        *)
+            echo "ENV must be 'local' or 'remote'." >&2
+            exit 2
+            ;;
+    esac
+}
+
+usage() {
+    echo "Usage: $0 local {dev|prod} | $0 {deploy|delete} {local|remote} {dev|prod}" >&2
+    exit 2
+}
+
 print_api_url() {
     if [ "$AWS_TARGET" = "local" ]; then
         API_ID="$(get_stack_output ApiId)"
@@ -98,7 +134,7 @@ print_api_url() {
 }
 
 run_local_api() {
-    AWS_TARGET="${AWS_TARGET:-local}"
+    AWS_TARGET="local"
     build_package
 
     sam_cmd local start-api \
@@ -106,73 +142,80 @@ run_local_api() {
         --port "$SAM_LOCAL_PORT"
 }
 
-deploy_local() {
-    AWS_TARGET="local"
+deploy() {
+    STACK_NAME="$(default_stack_name)"
+    SAM_CONFIG_ENV="$(default_sam_config_env)"
     build_package
 
-    sam_cmd deploy \
-        --template-file .aws-sam/build/template.yaml \
-        --stack-name "$STACK_NAME" \
-        --capabilities CAPABILITY_IAM \
-        --parameter-overrides ApiStageName="$API_STAGE" \
-        --resolve-s3 false \
-        --s3-bucket local-bucket \
-        --guided
+    if [ "$AWS_TARGET" = "local" ]; then
+        ensure_local_bucket
+    fi
+
+    if [ "$AWS_TARGET" = "local" ]; then
+        sam_cmd deploy \
+            --config-file "$SAM_CONFIG_FILE" \
+            --config-env "$SAM_CONFIG_ENV" \
+            --template-file .aws-sam/build/template.yaml \
+            --stack-name "$STACK_NAME" \
+            --s3-bucket "$LOCAL_ARTIFACT_BUCKET"
+    else
+        sam_cmd deploy \
+            --config-file "$SAM_CONFIG_FILE" \
+            --config-env "$SAM_CONFIG_ENV" \
+            --template-file .aws-sam/build/template.yaml \
+            --stack-name "$STACK_NAME"
+    fi
 
     print_api_url
 }
 
-deploy_remote() {
-    AWS_TARGET="remote"
-    build_package
+delete() {
+    STACK_NAME="$(default_stack_name)"
+    SAM_CONFIG_ENV="$(default_sam_config_env)"
 
-    sam_cmd deploy \
-        --template-file .aws-sam/build/template.yaml \
-        --stack-name "$STACK_NAME" \
-        --capabilities CAPABILITY_IAM \
-        --parameter-overrides ApiStageName="$API_STAGE" \
-        --guided
+    if [ "$AWS_TARGET" = "local" ]; then
+        aws_cmd cloudformation delete-stack --stack-name "$STACK_NAME"
+        aws_cmd cloudformation wait stack-delete-complete --stack-name "$STACK_NAME"
 
-    print_api_url
-}
-
-delete_local() {
-    AWS_TARGET="local"
-
-    aws_cmd cloudformation delete-stack --stack-name "$STACK_NAME"
-    aws_cmd cloudformation wait stack-delete-complete --stack-name "$STACK_NAME"
-
-    printf "\nDeleted local stack: %s\n\n" "$STACK_NAME"
-}
-
-delete_remote() {
-    AWS_TARGET="remote"
-
-    sam_cmd delete \
-        --stack-name "$STACK_NAME"
+        printf "\nDeleted local stack: %s\n\n" "$STACK_NAME"
+    else
+        sam_cmd delete \
+            --config-file "$SAM_CONFIG_FILE" \
+            --config-env "$SAM_CONFIG_ENV"
+    fi
 }
 
 load_env
 
-ACTION="${1:-local}"
-AWS_REGION="${AWS_REGION:-sa-east-1}"
-AWS_LOCAL_ENDPOINT="${AWS_LOCAL_ENDPOINT:-http://localhost:4566}"
-STACK_NAME="${STACK_NAME:-serverless-ticketing-notifications}"
-TEMPLATE_FILE="${TEMPLATE_FILE:-template.yaml}"
-SAM_LOCAL_PORT="${SAM_LOCAL_PORT:-3000}"
-API_STAGE="${API_STAGE:-dev}"
+PROJECT_NAME="serverless-ticketing-notifications"
+AWS_REGION="sa-east-1"
+AWS_LOCAL_ENDPOINT="http://localhost:4566"
+TEMPLATE_FILE="template.yaml"
+SAM_LOCAL_PORT="3000"
+LOCAL_ARTIFACT_BUCKET="local-bucket"
+SAM_CONFIG_FILE="$PROJECT_ROOT/samconfig.yaml"
 REQUIREMENTS_FILE="src/requirements.txt"
 
+ACTION="${1:-local}"
+case "$ACTION" in
+    local)
+        AWS_TARGET="local"
+        API_STAGE="${2:-${STAGE:-dev}}"
+        ;;
+    deploy | delete)
+        AWS_TARGET="${2:-${ENV:-local}}"
+        API_STAGE="${3:-${STAGE:-dev}}"
+        ;;
+    *) usage ;;
+esac
+
 trap cleanup_requirements EXIT HUP INT TERM
+validate_stage
+validate_target
 
 case "$ACTION" in
     local) run_local_api ;;
-    deploy-local) deploy_local ;;
-    deploy-remote) deploy_remote ;;
-    delete-local) delete_local ;;
-    delete-remote) delete_remote ;;
-    *)
-        echo "Usage: $0 {local|deploy-local|deploy-remote|delete-local|delete-remote}" >&2
-        exit 2
-        ;;
+    deploy) deploy ;;
+    delete) delete ;;
+    *) usage ;;
 esac
