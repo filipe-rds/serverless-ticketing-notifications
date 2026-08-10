@@ -7,22 +7,14 @@ PROJECT_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 
 cd "$PROJECT_ROOT"
 
-load_env() {
-    if [ -f ".env" ]; then
-        set -a
-        . "./.env"
-        set +a
-    fi
-}
-
 local_aws_env() {
     env -u AWS_PROFILE \
         AWS_SDK_LOAD_CONFIG=0 \
         AWS_ACCESS_KEY_ID=test \
         AWS_SECRET_ACCESS_KEY=test \
-        AWS_DEFAULT_REGION="$AWS_REGION" \
-        AWS_REGION="$AWS_REGION" \
-        AWS_ENDPOINT_URL="$AWS_LOCAL_ENDPOINT" \
+        AWS_DEFAULT_REGION="$LOCAL_AWS_REGION" \
+        AWS_REGION="$LOCAL_AWS_REGION" \
+        AWS_ENDPOINT_URL="$LOCAL_AWS_ENDPOINT" \
         "$@"
 }
 
@@ -39,9 +31,9 @@ sam_cmd() {
 
 aws_cmd() {
     if [ "$AWS_TARGET" = "local" ]; then
-        local_aws_env aws --endpoint-url="$AWS_LOCAL_ENDPOINT" "$@"
+        local_aws_env aws --endpoint-url="$LOCAL_AWS_ENDPOINT" "$@"
     elif [ "$AWS_TARGET" = "remote" ]; then
-        aws --region "$AWS_REGION" "$@"
+        aws "$@"
     else
         echo "AWS_TARGET must be 'local' or 'remote'." >&2
         exit 2
@@ -92,7 +84,11 @@ default_sam_config_env() {
 }
 
 ensure_local_bucket() {
-    aws_cmd s3 mb "s3://$LOCAL_ARTIFACT_BUCKET" 2>/dev/null || true
+    if aws_cmd s3api head-bucket --bucket "$LOCAL_ARTIFACT_BUCKET" 2>/dev/null; then
+        return 0
+    fi
+
+    aws_cmd s3 mb "s3://$LOCAL_ARTIFACT_BUCKET"
 }
 
 validate_stage() {
@@ -124,7 +120,7 @@ print_api_url() {
     if [ "$AWS_TARGET" = "local" ]; then
         API_ID="$(get_stack_output ApiId)"
         API_STAGE="$(get_stack_output ApiStage)"
-        API_URL="$AWS_LOCAL_ENDPOINT/restapis/$API_ID/$API_STAGE/_user_request_"
+        API_URL="$LOCAL_AWS_ENDPOINT/restapis/$API_ID/$API_STAGE/_user_request_"
     else
         API_URL="$(get_stack_output ApiUrl)"
     fi
@@ -181,15 +177,14 @@ delete() {
     else
         sam_cmd delete \
             --config-file "$SAM_CONFIG_FILE" \
-            --config-env "$SAM_CONFIG_ENV"
+            --config-env "$SAM_CONFIG_ENV" \
+            --stack-name "$STACK_NAME"
     fi
 }
 
-load_env
-
 PROJECT_NAME="serverless-ticketing-notifications"
-AWS_REGION="sa-east-1"
-AWS_LOCAL_ENDPOINT="http://localhost:4566"
+LOCAL_AWS_REGION="sa-east-1"
+LOCAL_AWS_ENDPOINT="http://localhost:4566"
 TEMPLATE_FILE="template.yaml"
 BUILT_TEMPLATE_FILE="$PROJECT_ROOT/.aws-sam/build/template.yaml"
 SAM_LOCAL_PORT="3000"
@@ -201,11 +196,11 @@ ACTION="${1:-local}"
 case "$ACTION" in
     local)
         AWS_TARGET="local"
-        API_STAGE="${2:-${STAGE:-dev}}"
+        API_STAGE="${2:-dev}"
         ;;
     deploy | delete)
-        AWS_TARGET="${2:-${ENV:-local}}"
-        API_STAGE="${3:-${STAGE:-dev}}"
+        AWS_TARGET="${2:-local}"
+        API_STAGE="${3:-dev}"
         ;;
     *) usage ;;
 esac

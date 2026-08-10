@@ -3,7 +3,6 @@ version: 0.1
 local-dev:
   deploy:
     parameters:
-      stack_name: serverless-ticketing-notifications-local-dev
       capabilities: CAPABILITY_IAM
       confirm_changeset: false
       fail_on_empty_changeset: false
@@ -11,14 +10,12 @@ local-dev:
       parameter_overrides: ApiStageName=dev
   delete:
     parameters:
-      stack_name: serverless-ticketing-notifications-local-dev
       region: sa-east-1
       no_prompts: true
 
 local-prod:
   deploy:
     parameters:
-      stack_name: serverless-ticketing-notifications-local-prod
       capabilities: CAPABILITY_IAM
       confirm_changeset: false
       fail_on_empty_changeset: false
@@ -26,14 +23,12 @@ local-prod:
       parameter_overrides: ApiStageName=prod
   delete:
     parameters:
-      stack_name: serverless-ticketing-notifications-local-prod
       region: sa-east-1
       no_prompts: true
 
 dev:
   deploy:
     parameters:
-      stack_name: serverless-ticketing-notifications-dev
       region: sa-east-1
       capabilities: CAPABILITY_IAM
       confirm_changeset: true
@@ -42,14 +37,12 @@ dev:
       parameter_overrides: ApiStageName=dev
   delete:
     parameters:
-      stack_name: serverless-ticketing-notifications-dev
       region: sa-east-1
       no_prompts: true
 
 prod:
   deploy:
     parameters:
-      stack_name: serverless-ticketing-notifications-prod
       region: sa-east-1
       capabilities: CAPABILITY_IAM
       confirm_changeset: true
@@ -58,6 +51,5 @@ prod:
       parameter_overrides: ApiStageName=prod
   delete:
     parameters:
-      stack_name: serverless-ticketing-notifications-prod
       region: sa-east-1
       no_prompts: false
