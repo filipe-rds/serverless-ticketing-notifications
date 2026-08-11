@@ -1,6 +1,8 @@
 from aws_lambda_powertools.event_handler.router import APIGatewayRouter
 
-from serverless_ticketing_notifications.common.response_entity import ResponseEntity
+from serverless_ticketing_notifications.ticketing.infrastructure.view.response_entity import (
+    ResponseEntity,
+)
 
 router = APIGatewayRouter()
 

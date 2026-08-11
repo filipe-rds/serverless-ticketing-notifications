@@ -1,6 +1,9 @@
 from aws_lambda_powertools.event_handler.router import APIGatewayRouter
 
-from serverless_ticketing_notifications.common.response_entity import ResponseEntity
+from serverless_ticketing_notifications.ticketing.infrastructure.view.response_entity import (
+    ResponseEntity,
+)
+
 
 router = APIGatewayRouter()
 
@@ -8,8 +11,7 @@ router = APIGatewayRouter()
 @router.get("/events/<event_id>")
 def get_event(event_id: str):
     return ResponseEntity.ok(
-        message="Get event route is running!", 
-        data={"event_id": event_id}
+        message="Get event route is running!", data={"event_id": event_id}
     )
 
 
