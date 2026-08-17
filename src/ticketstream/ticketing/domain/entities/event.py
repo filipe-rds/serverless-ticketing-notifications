@@ -1,4 +1,4 @@
-from ticketstream.shared.domain.value_objects.date_time import EventDateTime
+from ticketstream.shared.domain.value_objects.date_time import DateTime
 from ticketstream.shared.domain.value_objects.non_empty_string import NonEmptyString
 
 
@@ -8,8 +8,8 @@ class Event:
         id: NonEmptyString,
         name: NonEmptyString,
         description: NonEmptyString,
-        starts_at: EventDateTime,
-        ends_at: EventDateTime,
+        starts_at: DateTime,
+        ends_at: DateTime,
     ) -> None:
         self._id = id
         self._name = name
@@ -30,9 +30,9 @@ class Event:
         return self._description
 
     @property
-    def starts_at(self) -> EventDateTime:
+    def starts_at(self) -> DateTime:
         return self._starts_at
 
     @property
-    def ends_at(self) -> EventDateTime:
+    def ends_at(self) -> DateTime:
         return self._ends_at
