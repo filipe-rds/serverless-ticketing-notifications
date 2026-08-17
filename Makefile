@@ -1,4 +1,8 @@
-.PHONY: format lint typecheck test check sam-validate sam-local deploy delete ministack-health show-config
+.PHONY: setup format lint typecheck test check
+
+setup:
+	uv sync
+	uv pip install -e .
 
 format:
 	uv run ruff format
