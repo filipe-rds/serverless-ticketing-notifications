@@ -2,7 +2,7 @@ from decimal import Decimal
 
 
 class NonNegativeDecimal(Decimal):
-    def __new__(cls, value: Decimal):
+    def __new__(cls, value: Decimal) -> Decimal:
         if type(value) is not Decimal:
             raise TypeError("Expected a Decimal.")
 
