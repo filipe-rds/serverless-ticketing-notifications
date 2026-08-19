@@ -1,8 +1,4 @@
-from ticketstream.shared.domain.value_objects.non_empty_string import NonEmptyString
-from ticketstream.shared.domain.value_objects.non_negative_integer import (
-    NonNegativeInteger,
-)
-from ticketstream.ticketing.domain.value_objects.reservation_status import (
+from ticketstream.ticketing.domain.enumerators.reservation_status import (
     ReservationStatus,
 )
 
@@ -10,32 +6,32 @@ from ticketstream.ticketing.domain.value_objects.reservation_status import (
 class Reservation:
     def __init__(
         self,
-        id: NonEmptyString,
-        user_id: NonEmptyString,
-        ticket_category_id: NonEmptyString,
-        quantity: NonNegativeInteger,
+        reservation_id: str,
+        user_id: str,
+        ticket_category_id: str,
+        quantity: int,
         status: ReservationStatus = ReservationStatus.PENDING,
     ) -> None:
-        self._id = id
+        self._reservation_id = reservation_id
         self._user_id = user_id
         self._ticket_category_id = ticket_category_id
         self._quantity = quantity
         self._status = status
 
     @property
-    def id(self) -> NonEmptyString:
-        return self._id
+    def reservation_id(self) -> str:
+        return self.reservation_id
 
     @property
-    def user_id(self) -> NonEmptyString:
+    def user_id(self) -> str:
         return self._user_id
 
     @property
-    def ticket_category_id(self) -> NonEmptyString:
+    def ticket_category_id(self) -> str:
         return self._ticket_category_id
 
     @property
-    def quantity(self) -> NonNegativeInteger:
+    def quantity(self) -> int:
         return self._quantity
 
     @property
