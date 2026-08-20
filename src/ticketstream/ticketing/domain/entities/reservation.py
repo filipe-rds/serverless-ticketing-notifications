@@ -1,46 +1,42 @@
+from dataclasses import dataclass, replace
+
 from ticketstream.ticketing.domain.enumerators.reservation_status import (
     ReservationStatus,
 )
 
 
+@dataclass(frozen=True)
 class Reservation:
-    def __init__(
-        self,
-        reservation_id: str,
-        user_id: str,
-        ticket_category_id: str,
-        quantity: int,
-        status: ReservationStatus = ReservationStatus.PENDING,
-    ) -> None:
-        self._reservation_id = reservation_id
-        self._user_id = user_id
-        self._ticket_category_id = ticket_category_id
-        self._quantity = quantity
-        self._status = status
+    reservation_id: str
+    ticket_category_id: str
+    user_id: str
+    quantity: int
+    status: ReservationStatus
 
-    @property
-    def reservation_id(self) -> str:
-        return self.reservation_id
+    def __post_init__(self) -> None:
+        if not self.reservation_id.strip():
+            raise ValueError("Reservation id cannot be empty")
 
-    @property
-    def user_id(self) -> str:
-        return self._user_id
+        if not self.ticket_category_id.strip():
+            raise ValueError("Reservation ticket category id cannot be empty")
 
-    @property
-    def ticket_category_id(self) -> str:
-        return self._ticket_category_id
+        if not self.user_id.strip():
+            raise ValueError("Reservation user id cannot be empty")
 
-    @property
-    def quantity(self) -> int:
-        return self._quantity
+        if self.quantity <= 0:
+            raise ValueError("Reservation quantity must be greater than zero")
 
-    @property
-    def status(self) -> ReservationStatus:
-        return self._status
+        if self.status is None:
+            raise ValueError("Reservation status cannot be empty")
 
-    def transition_to(self, next_status: ReservationStatus) -> None:
-        if not self._status.can_trasition_to(next_status):
-            raise ValueError(
-                f"Invalid transition status: {self._status.value} -> {next_status.value}"
-            )
-        self._status = next_status
+    def confirm(self) -> Reservation:
+        if not self.status.can_transition_to(ReservationStatus.CONFIRMED):
+            raise ValueError("Reservation status cannot be confirmed")
+
+        return replace(self, status=ReservationStatus.CONFIRMED)
+
+    def cancel(self) -> Reservation:
+        if not self.status.can_transition_to(ReservationStatus.CANCELLED):
+            raise ValueError("Reservation status cannot be cancelled")
+
+        return replace(self, status=ReservationStatus.CANCELLED)

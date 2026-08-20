@@ -1,96 +1,62 @@
+from dataclasses import dataclass, replace
 from decimal import Decimal
+from typing import Any
 
 
+@dataclass(frozen=True)
 class TicketCategory:
-    def __init__(
-        self,
-        ticket_category_id: str,
-        name: str,
-        base_price: Decimal,
-        total_quantity: int,
-        available_quantity: int,
-        reserved_quantity: int,
-    ) -> None:
-        self._id = ticket_category_id
-        self._name = name
-        self._base_price = base_price
-        self._total_quantity = total_quantity
-        self._available_quantity = available_quantity
-        self._reserved_quantity = reserved_quantity
+    ticket_category_id: str
+    event_id: str
+    name: str
+    base_price: Decimal
+    total_quantity: int
+    available_quantity: int
+    reserved_quantity: int
 
-        self._validate_quantities()
+    def __post_init__(self) -> None:
+        if not self.ticket_category_id.strip():
+            raise ValueError("Ticket category id cannot be empty")
 
-    @property
-    def id(self) -> str:
-        return self._id
+        if not self.event_id.strip():
+            raise ValueError("Event id cannot be empty")
 
-    @property
-    def name(self) -> str:
-        return self._name
+        if not self.name.strip():
+            raise ValueError("Name cannot be empty")
 
-    @property
-    def base_price(self) -> Decimal:
-        return self._base_price
+        if self.base_price <= 0:
+            raise ValueError("Base price must be greater than zero")
 
-    @property
-    def total_quantity(self) -> int:
-        return self._total_quantity
+        if self.total_quantity <= 0:
+            raise ValueError("Total quantity must be greater than zero")
 
-    @total_quantity.setter
-    def total_quantity(self, value: int) -> None:
-        self._total_quantity = self._validate_total_quantity(value)
+        if self.available_quantity > self.total_quantity:
+            raise ValueError("Available quantity cannot exceed total quantity")
 
-    @property
-    def available_quantity(self) -> int:
-        return self._available_quantity
-
-    @available_quantity.setter
-    def available_quantity(self, value: int) -> None:
-        self._available_quantity = self._validate_available_quantity(value)
-
-    @property
-    def reserved_quantity(self) -> int:
-        return self._reserved_quantity
-
-    @reserved_quantity.setter
-    def reserved_quantity(self, value: int) -> None:
-        self._reserved_quantity = self._validate_reserved_quantity(value)
+        if self.reserved_quantity > self.available_quantity:
+            raise ValueError("Reserved quantity cannot exceed available quantity")
 
     @property
     def sold_quantity(self) -> int:
-        return self._total_quantity - self._available_quantity
+        return self.total_quantity - self.available_quantity
 
     @property
     def reservable_quantity(self) -> int:
-        return self._available_quantity - self._reserved_quantity
+        return self.available_quantity - self.reserved_quantity
 
-    def _validate_quantities(self) -> None:
-        self._validate_total_quantity(self._total_quantity)
-        self._validate_available_quantity(self._available_quantity)
-        self._validate_reserved_quantity(self._reserved_quantity)
+    def update(self, **changes: Any) -> TicketCategory:
+        valid_fields = {
+            "name",
+            "base_price",
+            "total_quantity",
+            "available_quantity",
+            "reserved_quantity",
+        }
 
-    def _validate_available_quantity(self, value: int) -> int:
-        if value > self._total_quantity:
+        unknown_fields = set(changes) - valid_fields
+
+        if unknown_fields:
             raise ValueError(
-                "Available quantity must be less than or equal to total quantity."
+                f"Unknown fields for update: {', '.join(sorted(unknown_fields))}"
             )
 
-        return value
-
-    def _validate_reserved_quantity(self, value: int) -> int:
-        if value > self._available_quantity:
-            raise ValueError(
-                "Reserved quantity must be less than or equal to available quantity."
-            )
-
-        return value
-
-    def _validate_total_quantity(self, value: int) -> int:
-        diference = value - self._total_quantity
-
-        if diference < self.reservable_quantity:
-            raise ValueError(
-                "Total quantity exceeds the reservable limit given available and reserved quantities."
-            )
-
-        return value
+        return replace(self, **changes)

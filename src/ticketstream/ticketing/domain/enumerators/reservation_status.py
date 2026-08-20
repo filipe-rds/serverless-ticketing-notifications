@@ -6,7 +6,8 @@ class ReservationStatus(Enum):
     CONFIRMED = "CONFIRMED"
     CANCELLED = "CANCELLED"
 
-    def can_trasition_to(self, next_status: ReservationStatus) -> bool:
+    @staticmethod
+    def can_transition_to(next_status: ReservationStatus) -> bool:
         allowed = {
             ReservationStatus.PENDING: {
                 ReservationStatus.CONFIRMED,

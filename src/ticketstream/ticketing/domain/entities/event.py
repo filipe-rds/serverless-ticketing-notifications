@@ -1,37 +1,41 @@
+from dataclasses import dataclass, replace
 from datetime import datetime
+from typing import Any
 
 
+@dataclass(frozen=True)
 class Event:
-    def __init__(
-        self,
-        event_id: str,
-        name: str,
-        description: str,
-        starts_at: datetime,
-        ends_at: datetime,
-    ) -> None:
-        self._event_id = event_id
-        self._name = name
-        self._description = description
-        self._starts_at = starts_at
-        self._ends_at = ends_at
+    event_id: str
+    name: str
+    description: str
+    starts_at: datetime
+    ends_at: datetime
 
-    @property
-    def event_id(self) -> str:
-        return self.event_id
+    def __post_init__(self):
 
-    @property
-    def name(self) -> str:
-        return self._name
+        if not self.event_id.strip():
+            raise ValueError("Event id cannot be empty")
 
-    @property
-    def description(self) -> str:
-        return self._description
+        if self.name.strip() == "":
+            raise ValueError("Event name cannot be empty")
 
-    @property
-    def starts_at(self) -> datetime:
-        return self._starts_at
+        if self.description.strip() == "":
+            raise ValueError("Event description cannot be empty")
 
-    @property
-    def ends_at(self) -> datetime:
-        return self._ends_at
+        if not self.starts_at:
+            raise ValueError("Event starts_at cannot be empty")
+
+        if not self.ends_at:
+            raise ValueError("Event ends_at cannot be empty")
+
+    def update(self, **changes: Any) -> Event:
+        valid_fields = {"name", "description", "starts_at", "ends_at"}
+
+        unknown_fields = set(changes) - valid_fields
+
+        if unknown_fields:
+            raise ValueError(
+                f"Unknown fields for update: {', '.join(sorted(unknown_fields))}"
+            )
+
+        return replace(self, **changes)
