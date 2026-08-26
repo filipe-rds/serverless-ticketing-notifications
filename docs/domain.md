@@ -93,6 +93,7 @@ Representa o registro de uma notificação processada.
 
 **Status possíveis**
 
+- `PENDING`
 - `SENT`
 - `FAILED`
 
