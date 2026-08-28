@@ -12,6 +12,6 @@ class Event:
     description: str
     location: str
     max_tickets_per_users: int
-    categories: list[TicketCategory]
+    categories: tuple[TicketCategory, ...]
     start_at: datetime
     end_at: datetime
