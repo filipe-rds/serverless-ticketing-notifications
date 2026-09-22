@@ -11,6 +11,7 @@ dependencies = [
     "aws-lambda-powertools>=3.31.1",
     "boto3>=1.43.42",
     "pydantic>=2.13.4",
+    "pydynox[pydantic]>=1.3.1",
 ]
 
 [dependency-groups]

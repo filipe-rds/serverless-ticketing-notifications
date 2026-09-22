@@ -1,0 +1,2 @@
+class DynamoDBEventRepository:
+    pass
