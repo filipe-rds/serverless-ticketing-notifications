@@ -8,10 +8,10 @@ class TicketCategory:
     ticket_category_id: UUID
     name: str
     base_price: Decimal
-    total_quantity: int
-    available_quantity: int
-    reserved_quantity: int
+    capacity: int
+    reserved: int
+    sold: int
 
     @property
-    def reservable_quantity(self) -> int:
-        return self.available_quantity - self.reserved_quantity
+    def reservable(self) -> int:
+        return self.capacity - self.sold - self.reserved

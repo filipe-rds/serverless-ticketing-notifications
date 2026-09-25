@@ -16,9 +16,69 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "import-linter>=2.15",
     "moto>=5.2.2",
     "pytest>=9.1.1",
     "python-dotenv>=1.2.2",
     "ruff>=0.15.20",
     "ty>=0.0.57",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ticketstream"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "ANN",  # flake8-annotations
+    "RUF",  # ruff
+    "TID",  # flake8-tidy-imports
+    "PL",   # pylint
+    "C4",   # flake8-comprehensions
+    "DTZ",  # flake8-datetimez
+    "PT",   # flake8-pytest-style
+    "ERA",  # eradicate
+]
+ignore = [
+    "ANN401",  # Any explicito: tolerado enquanto a divida 3 existir
+    "N818",    # exigiria DomainError; o AGENTS.md secao 3.1 fixa DomainException
+]
+
+[tool.ruff.lint.per-file-ignores]
+# PLR2004: numeros literais sao a propria assercao num teste.
+# PLR0913: os builders de tests/support sao keyword-only por design.
+"tests/**" = ["PLR2004", "PLR0913"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ticketstream", "tests"]
+
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.src]
+include = ["src", "tests"]
+
+[tool.ty.terminal]
+error-on-warning = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Substitui os __init__.py: torna `tests` importavel como namespace package (PEP 420),
+# para que o conftest.py alcance tests/fakes/ sem transformar a arvore em pacote.
+pythonpath = ["."]
+addopts = "-q --strict-markers --strict-config"

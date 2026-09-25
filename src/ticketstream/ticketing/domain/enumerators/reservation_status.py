@@ -7,16 +7,16 @@ class ReservationStatus(Enum):
     CANCELLED = "CANCELLED"
     EXPIRED = "EXPIRED"
 
-    @staticmethod
-    def can_transition_to(next_status: ReservationStatus) -> bool:
-        allowed = {
+    def can_transition_to(self, next_status: ReservationStatus) -> bool:
+        allowed: dict[ReservationStatus, set[ReservationStatus]] = {
             ReservationStatus.PENDING: {
                 ReservationStatus.CONFIRMED,
                 ReservationStatus.CANCELLED,
+                ReservationStatus.EXPIRED,
             },
-            ReservationStatus.CONFIRMED: {ReservationStatus.CANCELLED},
+            ReservationStatus.CONFIRMED: set(),
             ReservationStatus.CANCELLED: set(),
             ReservationStatus.EXPIRED: set(),
         }
 
-        return next_status in allowed[next_status]
+        return next_status in allowed[self]

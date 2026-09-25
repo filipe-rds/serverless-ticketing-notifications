@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from datetime import datetime
+from uuid import UUID
 
-from ticketstream.ticketing.domain.entities import event
 from ticketstream.ticketing.domain.entities.event import Event
 
 
 @dataclass(frozen=True)
 class EventResponse:
+    event_id: UUID
     name: str
     description: str
     location: str
@@ -16,12 +17,12 @@ class EventResponse:
 
     @classmethod
     def from_entity(cls, event_entity: Event) -> EventResponse:
-        reservable_quantity = 0
-
-        for category in event_entity.categories:
-            reservable_quantity += category.reservable_quantity
+        reservable_quantity = sum(
+            category.reservable for category in event_entity.categories
+        )
 
         return cls(
+            event_entity.event_id,
             event_entity.name,
             event_entity.description,
             event_entity.location,

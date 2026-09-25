@@ -1,0 +1,61 @@
+[importlinter]
+root_packages =
+    ticketstream
+include_external_packages = True
+
+[importlinter:contract:ticketing-layers]
+name = Ticketing respects the Dependency Rule
+type = layers
+layers =
+    ticketstream.ticketing.infrastructure
+    ticketstream.ticketing.application
+    ticketstream.ticketing.domain
+
+[importlinter:contract:notifications-layers]
+name = Notifications respects the Dependency Rule
+type = layers
+layers =
+    ticketstream.notifications.infrastructure
+    ticketstream.notifications.application
+    ticketstream.notifications.domain
+
+[importlinter:contract:bounded-contexts]
+name = Bounded contexts are independent
+type = independence
+modules =
+    ticketstream.ticketing
+    ticketstream.notifications
+
+[importlinter:contract:inner-rings-are-pure]
+name = Inner rings are free of external libraries
+type = forbidden
+source_modules =
+    ticketstream.shared
+    ticketstream.ticketing.domain
+    ticketstream.ticketing.application
+    ticketstream.notifications.domain
+    ticketstream.notifications.application
+forbidden_modules =
+    boto3
+    pydynox
+    aws_lambda_powertools
+    pydantic
+
+[importlinter:contract:shared-is-standalone]
+name = Shared kernel does not depend on bounded contexts
+type = forbidden
+source_modules =
+    ticketstream.shared
+forbidden_modules =
+    ticketstream.ticketing
+    ticketstream.notifications
+
+[importlinter:contract:domain-leans-only-on-shared-exceptions]
+name = Domain only leans on the shared exception hierarchy
+type = forbidden
+source_modules =
+    ticketstream.ticketing.domain
+    ticketstream.notifications.domain
+forbidden_modules =
+    ticketstream.shared.result
+    ticketstream.shared.use_case
