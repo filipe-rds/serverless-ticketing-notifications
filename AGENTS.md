@@ -23,6 +23,9 @@ checkout) e `notifications`
 **O objetivo do projeto é formar base técnica em arquitetura de software.**
 A API funcionando é consequência. Uma entrega rápida que borre as fronteiras entre camadas destrói exatamente o valor buscado aqui.
 
+O agente implementa (§2.1), mas o valor didático continua: todo plano e todo relato **explicam** a decisão
+arquitetural em jogo, a alternativa descartada e o porquê.
+
 ### 1.1 Princípio norteador
 
 Este projeto segue **Clean Architecture com disciplina e proporcionalidade**.
@@ -85,26 +88,77 @@ Limites completos são aceitáveis. Limites parciais também são, desde que:
 
 ## 2. Como o agente deve trabalhar
 
-### 2.1 Modo socrático — o desenvolvedor escreve o código
+### 2.1 Modo executor conservador — plano validado, testes congelados
 
-O agente **não escreve código de produção por padrão**. O papel dele é:
+O agente **executa**, inclusive código de produção em `src/`, mas com postura **conservadora**:
 
-1. Explicar o conceito arquitetural em jogo.
-2. Apontar o arquivo exato e o contrato esperado.
-3. Nomear a alternativa descartada e por quê.
-4. Revisar o código escrito contra a Dependency Rule e contra este documento.
+- a fonte da verdade é a documentação (`docs/domain.md`, `docs/use_cases.md`, DEC-xx em `docs/requirements.md`, FRD e
+  Blueprint da fatia) e este documento;
+- o agente **não inventa regra de negócio**, estado, transição, erro, port ou campo. O que não tem fonte documentada
+  vira **pergunta ao usuário**, nunca suposição;
+- boas práticas não são opcionais: Dependency Rule, TDD, fronteiras do §5, padrões do §6;
+- **nada é executado sem um plano bem definido e aprovado pelo usuário.** Aprovação vale para a tarefa aprovada, não
+  se estende à seguinte.
 
-**Exceções em que o agente pode escrever:**
+#### 2.1.1 Ciclo de uma tarefa com código de produção
 
-- **testes que falham (red)**;
-- **operações mecânicas**: `git mv`, `Makefile`, `pyproject.toml`,
-  `.importlinter`, documentação, `docker-compose.yml`, `template.yaml` (recursos, permissões e ligações, **não** o
-  código dos handlers) e scripts do ambiente local em `scripts/`;
-- **quando pedido explicitamente**.
+Cada tarefa (T-XXX do Blueprint) passa por **três portões de aprovação**, nesta ordem:
+
+1. **Entender e perguntar.** Ler as especificações da tarefa. Lacuna, ambiguidade ou conflito de regra → perguntar ao
+   usuário antes de planejar. A resposta é registrada como DEC-xx em `docs/requirements.md` ou como dívida no §10.
+2. **Portão 1 — Plano de testes.** Uma matriz *regra → teste*: cada teste cita a regra de origem (INV-xx, RN do FRD,
+   ramo `Ok`/`Err` do UC, DEC-xx). **Nenhum teste sem regra de origem; nenhuma regra da tarefa sem teste.** O usuário
+   aprova a matriz.
+3. **Portão 2 — Testes vermelhos consolidados.** O agente escreve os testes, roda e mostra que eles falham **pelo
+   motivo certo** (módulo ou comportamento ausente — não erro de sintaxe, fixture quebrada ou import errado). O usuário
+   aprova, e os testes são **congelados** num commit próprio: `test(<fatia>): ...`. Esse commit é a referência do
+   congelamento.
+4. **Portão 3 — Plano de implementação.** Arquivos em `src/`, contratos (assinaturas, ports, `Request`/`Response`/
+   `Error`), alternativa descartada e trade-offs. O usuário aprova.
+5. **Implementar** só o necessário para os testes congelados ficarem verdes, e então refatorar. Nada fora do plano
+   aprovado; necessidade nova no meio do caminho → parar e perguntar.
+6. **Verificar e relatar:** `make check`, a prova de congelamento (§2.1.3) e um resumo das decisões e do porquê (§1).
+
+Os testes congelados são o **contrato da tarefa**: eles fixam o escopo e evitam fluxos alternativos durante o
+desenvolvimento.
+
+#### 2.1.2 Restrições durante a implementação
+
+Depois do congelamento, e até a tarefa fechar, o agente **não pode**:
+
+- editar, apagar ou renomear arquivos em `tests/` — incluindo `tests/fakes/` e `tests/conftest.py`;
+- afrouxar asserções, remover casos de `parametrize`, usar `pytest.skip`, `xfail` ou `importorskip`;
+- alterar a configuração que decide o que roda e o que passa: `[tool.pytest]`, `[tool.ruff]` e `[tool.ty]` do
+  `pyproject.toml`, `.importlinter`, alvos do `Makefile`;
+- silenciar verificação: `# type: ignore`, `# noqa`, `# pragma: no cover`, `cast` para calar o `ty`;
+- escrever código que só funciona para os valores dos testes (detectar execução de teste, *hardcode* de fixture).
+
+Se um teste congelado parecer errado ou contradizer a documentação, o agente **para**, explica a divergência e
+pergunta. Corrigir o teste é uma **nova rodada dos Portões 1 e 2**, com novo commit de congelamento.
+
+#### 2.1.3 Prova de congelamento
+
+Obrigatória no relato da tarefa e na revisão da fatia:
+
+```bash
+git diff --stat <commit-dos-testes> -- tests/ pyproject.toml .importlinter Makefile
+```
+
+A saída tem de ser **vazia**. Qualquer linha é violação do §2.1.2.
+
+#### 2.1.4 Operações mecânicas
+
+`git mv`, `Makefile`, `pyproject.toml`, `.importlinter`, documentação, `docker-compose.yml`, `template.yaml` e
+`scripts/` também exigem **plano aprovado**, mas não passam pelos Portões 1 e 2. Mexer nesses arquivos durante uma
+tarefa com testes congelados continua proibido (§2.1.2).
 
 ### 2.2 Regras de conduta
 
-- Nunca implementar um use case inteiro “para ganhar tempo”.
+- Nunca inventar regra de negócio: sem fonte documentada, perguntar.
+- Nunca executar sem plano aprovado, nem estender uma aprovação a outra tarefa.
+- Nunca ajustar um teste congelado para o build passar.
+- Diante de duas abordagens válidas de desenvolvimento, perguntar ao usuário com recomendação e trade-offs.
+- Nunca implementar um use case inteiro “para ganhar tempo”, pulando os portões.
 - Ao revisar, citar a regra violada, não apenas dizer que está errado.
 - Ao propor design, sempre apresentar trade-offs.
 - Não expandir escopo: uma fatia vertical por vez.
@@ -117,7 +171,7 @@ As skills em `.agents/skills/` estruturam o trabalho de cada fatia (especificaç
 **genéricas** — escritas para qualquer stack — e **este documento prevalece sobre elas**.
 
 Regra de conflito: qualquer fase de skill que mande "implementar", "aplicar correções" ou "corrigir" código de produção em `src/`
-segue o §2.1. O agente entrega teste vermelho, arquivo, contrato e alternativa descartada; o desenvolvedor escreve o código.
+segue o §2.1: os três portões de aprovação, testes congelados antes do código e as restrições do §2.1.2.
 
 Quais skills usar, quando e com que adaptações: [§13](#13-uso-das-skills). Agentes: [§14](#14-agentes).
 
@@ -522,8 +576,9 @@ Regras:
 
 - testes de `domain` e `application` não podem importar `moto`, `boto3` nem ler env vars;
 - prefira fakes em `tests/fakes/` a `unittest.mock`;
-- o agente pode escrever o teste vermelho;
-- o desenvolvedor escreve a implementação que o faz passar;
+- teste primeiro: a matriz regra → teste é aprovada, os testes vermelhos são aprovados e **congelados**, e só então
+  vem a implementação que os faz passar (§2.1.1);
+- teste congelado não é editado durante a implementação (§2.1.2);
 - `make check` **não depende de Docker**: unitários e integração (`moto`) rodam sem MiniStack. O E2E fica em
   `make test-e2e` (`docs/requirements.md` DEC-25).
 
@@ -531,14 +586,16 @@ Regras:
 
 ## 8. Fluxo de uma fatia vertical
 
-Ordem preferida — de dentro para fora:
+Ordem preferida — de dentro para fora. Todo passo com código de produção segue o ciclo do §2.1.1 (plano de testes →
+testes congelados → plano de implementação → implementação); os passos mecânicos seguem o §2.1.4.
 
-0. **FRD e Blueprint da fatia** em `docs/<fatia>/` (`feature-spec-brainstorm` → `feature-blueprint`, §13)
-1. **Entidade / regra de domínio** — teste vermelho → implementação
+0. **FRD e Blueprint da fatia** em `docs/<fatia>/` (`feature-spec-brainstorm` → `feature-blueprint`, §13), aprovados
+   pelo usuário antes de qualquer outro passo
+1. **Entidade / regra de domínio** — testes congelados → implementação
 2. **Port** em `application/ports/`
 3. **Request / Response / Error** do use case
-4. **Use case** — teste vermelho dos ramos `Ok` e `Err`
-5. **Fake** em `tests/fakes/`
+4. **Use case** — testes congelados dos ramos `Ok` e `Err` → implementação
+5. **Fake** em `tests/fakes/` — escrito e congelado junto com os testes que o usam
 6. **Schema externo / handler fino**
 7. **Extrair controller/presenter se houver ganho real**
 8. **Repositório concreto** em infraestrutura + teste de integração
@@ -642,9 +699,12 @@ dependencias entre aneis justamente onde elas precisam estar visiveis.
 ## 10. Estado atual
 
 **Build vermelho de propósito.** `make check` falha hoje, e isso é esperado: o teste vermelho da Etapa 2
-(`tests/unit/ticketing/test_list_event_tickets.py`) importa `list_event_tickets.request` e `.use_case`, que o
-desenvolvedor ainda vai escrever. Falham a coleta do pytest e o `ty` (que também verifica `tests/`). O build volta a
-ficar verde quando a Etapa 2 for implementada. Nenhum outro vermelho é aceitável.
+(`tests/unit/ticketing/test_list_event_tickets.py`) importa `list_event_tickets.request` e `.use_case`, que ainda
+não existem. Falham a coleta do pytest e o `ty` (que também verifica `tests/`). O build volta a ficar verde quando a
+Etapa 2 for implementada. Nenhum outro vermelho é aceitável.
+
+Esse teste é anterior ao ciclo do §2.1.1. Antes da implementação ele passa pelos Portões 1 e 2 (matriz regra → teste
+contra o UC-02 e congelamento) como qualquer teste novo.
 
 **Implementado:** estrutura base dos bounded contexts, entidades de `ticketing`
 (ainda sem comportamento completo), `ReservationStatus` com máquina de transição,
@@ -735,11 +795,13 @@ controllers/presenters dedicados.
           (`feature-blueprint`), cobrindo só o que falta — **agente**
     - [x] pacote `application/use_cases/list_event_tickets/` criado
     - [x] teste vermelho do caso de uso escrito em `tests/unit/ticketing/test_list_event_tickets.py`
-    - [ ] `request.py`, `response.py`, `use_case.py` (a união de erros no próprio pacote) — **desenvolvedor**
+    - [ ] Portões 1 e 2 do teste existente (matriz regra → teste e congelamento, §10) — **agente**, com aprovação
+    - [ ] `request.py`, `response.py`, `use_case.py` (a união de erros no próprio pacote) — **agente**, após o
+          Portão 3
     - [ ] handler fino em `infrastructure/entrypoints/http/handlers/`, acumulando os
-          papéis de controller e presenter (§4.4, §8.1) — **desenvolvedor**
-    - [ ] repositório DynamoDB + models/mappers + teste com `moto` — **desenvolvedor**
-    - [ ] função no `template.yaml` (**agente**) + teste E2E no MiniStack (**agente**, teste vermelho)
+          papéis de controller e presenter (§4.4, §8.1) — **agente**, após o Portão 3
+    - [ ] repositório DynamoDB + models/mappers + teste com `moto` — **agente**, testes congelados antes do adapter
+    - [ ] função no `template.yaml` + teste E2E no MiniStack — **agente**, teste E2E congelado antes do deploy
     - [ ] revisão da fatia (`feature-review`) + `security-review` leve do handler — **agente**
 - [ ] **Etapa 3 — `GET /events` migrado para o gabarito**
 - [ ] **Etapa 4 — `POST /events/{event_id}/reservations`**
@@ -810,11 +872,11 @@ feature-spec-brainstorm → feature-blueprint → feature-development → featur
 | Skill | Quando | Adaptação a este projeto |
 |---|---|---|
 | `feature-spec-brainstorm` | Início de cada fatia | Entradas: `docs/use_cases.md`, `docs/domain.md`. **Não reabrir** o que o §3, o §6.7 e o §8.2 já decidiram. Cada RN do FRD é marcada como **invariante** (candidata a `domain/exceptions/`) ou **erro de negócio previsto** (candidata a `Err`), conforme o §3.1. |
-| `feature-blueprint` | Após o FRD aprovado | Fases e tarefas seguem **a ordem do §8** (de dentro para fora). Cada T-XXX ganha o campo **Autor: agente \| desenvolvedor** conforme o §2.1 — teste vermelho, fake, `.importlinter`, `Makefile` e docs são do agente; entidade, use case, handler e repositório são do desenvolvedor. Testes planejados seguem o §7 (TDD no núcleo, `moto` na infraestrutura, fakes em vez de `unittest.mock`). O Blueprint declara os contratos do `import-linter` tocados e se controller/presenter serão extraídos, com justificativa pelo §8.1 — o default é **não extrair**. |
-| `feature-development` | Por tarefa do Blueprint | A Fase 2 (plano) vale como está. **A Fase 3 muda:** em tarefa de autor "desenvolvedor", o agente escreve o teste vermelho, aponta arquivo e contrato, nomeia a alternativa descartada e **para**. A Fase 4 roda `make check` sobre o código do desenvolvedor e revisa contra a Dependency Rule, citando a regra violada (§2.2). |
-| `feature-review` | Fim da fatia | Acrescentar um **Eixo 0 — Arquitetura** antes dos demais: Dependency Rule, D1–D12, §3.1 (sem `try/except` controlando fluxo de negócio), §6.2 (sem `dict`, entidade ou pydantic cruzando a fronteira) e `make check` como evidência. A Fase 5 **só recomenda** — quem aplica é o desenvolvedor. Não apontar ausência de teste de forma de dataclass (§10, "O que se testa"). |
-| `business-logic-hardening` | Etapa 4 e dívida 11 | Especificação formal: `docs/use_cases.md` + o "Conflito de regra resolvido" do §10 (estados terminais). Violação de transição/invariante → exceção de domínio; pré-condição prevista → `Err` (§3.1). O agente escreve os testes vermelhos; o desenvolvedor implementa. |
-| `feature-test-hardening` | Após `feature-development` ou `feature-review` | Test doubles = **fakes em `tests/fakes/`**; não sugerir `unittest.mock`. "Seeds" = fixtures-fábrica em `tests/conftest.py`. Respeitar o layout de testes do §10 (sem `__init__.py`, um arquivo por assunto, nomes únicos). O agente pode escrever testes; bug revelado por teste é sinalizado e corrigido pelo desenvolvedor. |
+| `feature-blueprint` | Após o FRD aprovado | Fases e tarefas seguem **a ordem do §8** (de dentro para fora). Cada T-XXX ganha o campo **Tipo: código \| mecânica** conforme o §2.1 — tarefa de código (entidade, use case, handler, repositório) passa pelos três portões do §2.1.1; tarefa mecânica (`.importlinter`, `Makefile`, `template.yaml`, docs) só pelo plano aprovado (§2.1.4). Cada tarefa de código lista as regras (INV-xx, RN, `Ok`/`Err`, DEC-xx) que a matriz do Portão 1 vai cobrir. Testes planejados seguem o §7 (TDD no núcleo, `moto` na infraestrutura, fakes em vez de `unittest.mock`). O Blueprint declara os contratos do `import-linter` tocados e se controller/presenter serão extraídos, com justificativa pelo §8.1 — o default é **não extrair**. |
+| `feature-development` | Por tarefa do Blueprint | A Fase 2 (plano) se desdobra nos Portões 1 e 3 do §2.1.1, com o Portão 2 (testes congelados em commit próprio) entre eles. **A Fase 3 muda:** o agente só implementa depois dos três portões, com as restrições do §2.1.2 — nenhuma edição em `tests/` nem na configuração de verificação. A Fase 4 roda `make check`, anexa a prova de congelamento (§2.1.3) e revisa contra a Dependency Rule, citando a regra violada (§2.2). |
+| `feature-review` | Fim da fatia | Acrescentar um **Eixo 0 — Arquitetura** antes dos demais: Dependency Rule, D1–D12, §3.1 (sem `try/except` controlando fluxo de negócio), §6.2 (sem `dict`, entidade ou pydantic cruzando a fronteira) `make check` e a prova de congelamento (§2.1.3) como evidência. A Fase 5 **recomenda**; correção só é aplicada com aprovação do usuário, seguindo o §2.1. Não apontar ausência de teste de forma de dataclass (§10, "O que se testa"). |
+| `business-logic-hardening` | Etapa 4 e dívida 11 | Especificação formal: `docs/use_cases.md` + o "Conflito de regra resolvido" do §10 (estados terminais). Violação de transição/invariante → exceção de domínio; pré-condição prevista → `Err` (§3.1). Os testes vermelhos são aprovados e congelados antes da implementação (§2.1.1); a skill não acrescenta estado, transição ou regra sem fonte documentada. |
+| `feature-test-hardening` | Após `feature-development` ou `feature-review` | Test doubles = **fakes em `tests/fakes/`**; não sugerir `unittest.mock`. "Seeds" = fixtures-fábrica em `tests/conftest.py`. Respeitar o layout de testes do §10 (sem `__init__.py`, um arquivo por assunto, nomes únicos). Os testes novos passam pelos Portões 1 e 2; bug revelado por teste é sinalizado ao usuário e corrigido em `src/` só depois do Portão 3, sem mexer no teste que o revelou. |
 | `reverse-engineering` | Ao fechar cada Etapa, ou antes de migrar código legado | Audita `docs/*.md` contra o código. Só reporta; achados alimentam [Dívidas conhecidas](#dívidas-conhecidas). |
 | `security-review` | A partir do primeiro handler; completa na Etapa 9 | Foco serverless: validação pydantic na borda, IDOR em reservas por usuário, condição atômica do DynamoDB contra overbooking (§6.8), IAM de menor privilégio no SAM, nada de stack trace no 500. Correções seguem o §2.1. |
 | `e2e-flow-test` | Fluxos de várias etapas, a partir da Etapa 5 | E2E aqui é **o sistema implantado no MiniStack**, chamado por HTTP, SQS ou Scheduler — não há frontend. O E2E de cada fatia é o passo 9 do §8. Esta skill cobre fluxos que atravessam fatias: reservar → checkout (Etapa 5); reservar → expirar (Etapa 6); reservar → checkout → notificação (Etapa 7). Usa `tests/e2e/` e `make test-e2e` (Etapa 1B). |
@@ -840,7 +902,8 @@ feature-spec-brainstorm → feature-blueprint → feature-development → featur
 
 - **Uma skill por vez, uma fatia por vez** (§2.2). O agente não emenda uma skill na seguinte sem pedido.
 - Os artefatos das skills (FRD, Blueprint, relatórios) são documentação: o agente os escreve.
-- As fases de aprovação das skills ("Posso implementar?") continuam valendo — elas combinam com o §2.1.
+- As fases de aprovação das skills ("Posso implementar?") continuam valendo e não substituem os portões do §2.1.1:
+  "Posso implementar?" corresponde ao Portão 3 e só é feita depois dos testes congelados.
 - Se um FRD ou Blueprint contradisser este documento, vale este documento, e a divergência entra em
   [Dívidas conhecidas](#dívidas-conhecidas).
 
@@ -855,12 +918,13 @@ catálogo, o fluxo e como carregá-los no Claude Code estão em
 | Agente | Papel | Pode escrever em |
 |---|---|---|
 | `slice-planner` | FRD e Blueprint da fatia | `docs/<fatia>/` |
-| `test-writer` | Testes vermelhos, fakes, fixtures e E2E | `tests/` |
-| `socratic-mentor` | Guia o desenvolvedor na implementação (§2.1) | — |
+| `test-writer` | Matriz regra → teste, testes vermelhos, fakes, fixtures e E2E (Portões 1 e 2) | `tests/` |
+| `slice-implementer` | Implementa a tarefa sob testes congelados (Portão 3 em diante) | `src/` |
 | `local-infra-engineer` | MiniStack, `template.yaml`, `samconfig`, `scripts/`, `Makefile` | arquivos mecânicos do §2.1 |
 | `architecture-reviewer` | Revisão contra a Dependency Rule e as especificações | relatório em `docs/<fatia>/` |
 | `security-reviewer` | Revisão de segurança serverless | relatório em `docs/<fatia>/` |
 | `docs-auditor` | Coerência código × docs e docs × docs | — (só relatório) |
 
-**Nenhum agente escreve código de produção em `src/`.** As regras deste documento valem para eles como valem para
-qualquer agente, e este documento prevalece sobre as instruções de cada um.
+**Só o `slice-implementer` escreve código de produção em `src/`, e só depois do Portão 3.** Nenhum agente edita
+`tests/` depois do congelamento (§2.1.2). As regras deste documento valem para eles como valem para qualquer agente, e
+este documento prevalece sobre as instruções de cada um.

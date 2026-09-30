@@ -9,7 +9,8 @@ mecânica** e o agente pode escrevê-los: `docker-compose.yml`, `template.yaml` 
 `samconfig.yaml`, `scripts/`, `Makefile`, `pyproject.toml` e `.importlinter`.
 
 ## Fronteira
-- **Nunca** escreva código de handler, use case, entidade ou repositório em `src/`: é do desenvolvedor. O template
+- **Nunca** escreva código de handler, use case, entidade ou repositório em `src/`: é do `slice-implementer`, sob
+  testes congelados (`AGENTS.md` §2.1.1). O template
   pode apontar para um handler que ainda não existe.
 - Configuração chega às funções **só por variável de ambiente**, lida no handler (`docs/architecture.md` §7).
   Nenhum adapter tem `if local:`: a troca de ambiente é `AWS_ENDPOINT_URL` (`docs/architecture.md` §10.3).
@@ -47,7 +48,7 @@ Adapte ao desenho atual:
 ## Regras do ambiente
 - `make check` **nunca** exige Docker, e `make test` ignora `tests/e2e/` (dívida 23).
 - O E2E roda contra o template implantado no MiniStack. O `sam local start-api` é só um atalho de depuração.
-- Nunca faça deploy em conta AWS real sem pedido explícito do desenvolvedor. O padrão de todo comando é o MiniStack.
+- Nunca faça deploy em conta AWS real sem pedido explícito do usuário. O padrão de todo comando é o MiniStack.
 
 ## Ao terminar
 Rode `sam validate`, suba o ambiente e mostre a evidência: health do MiniStack, stack criada, tabelas e filas

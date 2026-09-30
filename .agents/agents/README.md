@@ -1,14 +1,14 @@
 # Agentes do ticketstream
 
 Subagentes especializados, cada um com um papel do fluxo de trabalho do `AGENTS.md`. Eles aplicam as skills de
-`.agents/skills/` com as adaptações do `AGENTS.md` §13 e respeitam o modo socrático (§2.1): nenhum deles escreve código
-de produção em `src/`.
+`.agents/skills/` com as adaptações do `AGENTS.md` §13 e respeitam o modo executor conservador (§2.1): nada é executado sem plano aprovado pelo usuário, os testes são
+congelados antes do código de produção, e só o `slice-implementer` escreve em `src/`.
 
 | Agente | Papel | Escreve em | Skills que aplica | Quando |
 |---|---|---|---|---|
 | [`slice-planner`](slice-planner.md) | Planeja a fatia: FRD e Blueprint | `docs/<fatia>/` | `feature-spec-brainstorm`, `feature-blueprint` | Início de cada Etapa |
-| [`test-writer`](test-writer.md) | Testes vermelhos, fakes, fixtures, E2E | `tests/` | `feature-test-hardening`, `e2e-flow-test`, `business-logic-hardening` (testes) | Tarefas de teste do Blueprint |
-| [`socratic-mentor`](socratic-mentor.md) | Guia a implementação sem escrevê-la | nada | `feature-development` (Fase 3 socrática) | Tarefas de autor "desenvolvedor" |
+| [`test-writer`](test-writer.md) | Matriz regra → teste, testes vermelhos, fakes, fixtures, E2E; congelamento | `tests/` | `feature-test-hardening`, `e2e-flow-test`, `business-logic-hardening` (testes) | Início de toda tarefa de código (Portões 1 e 2) |
+| [`slice-implementer`](slice-implementer.md) | Implementa a tarefa sob testes congelados | `src/` | `feature-development` (Fases 3 e 4) | Tarefa de código após o Portão 3 |
 | [`local-infra-engineer`](local-infra-engineer.md) | MiniStack, SAM, scripts, Makefile | arquivos mecânicos (§2.1) | `docker-advisor` | Etapa 1B e cada função nova no template |
 | [`architecture-reviewer`](architecture-reviewer.md) | Revisão contra Dependency Rule e specs | `docs/<fatia>/review-*.md` | `feature-review` (com Eixo 0) | Fim de cada tarefa ou fatia |
 | [`security-reviewer`](security-reviewer.md) | Red Team estático, foco serverless | `docs/<fatia>/security-report-*.md` | `security-review` | Handler novo (leve); Etapa 9 (completa) |
@@ -21,10 +21,10 @@ Segue a ordem do `AGENTS.md` §8 e o ciclo da DEC-25:
 ```text
 slice-planner ─► FRD + Blueprint aprovados
    │
-   ├─► test-writer ──────────► teste vermelho (domínio / use case)
-   │      └─► socratic-mentor ─► desenvolvedor implementa até ficar verde
+   ├─► test-writer ──────────► matriz regra → teste (Portão 1) → testes vermelhos congelados (Portão 2)
+   │      └─► slice-implementer ─► plano (Portão 3) → implementa até ficar verde, sem tocar em tests/
    │
-   ├─► test-writer ──────────► teste de integração (moto) → desenvolvedor implementa o adapter
+   ├─► test-writer ──────────► teste de integração (moto) congelado → slice-implementer implementa o adapter
    │
    ├─► local-infra-engineer ─► função no template.yaml + deploy no MiniStack
    │      └─► test-writer ────► teste E2E (MiniStack)
@@ -37,8 +37,10 @@ slice-planner ─► FRD + Blueprint aprovados
 ## Regras comuns
 - O `AGENTS.md` prevalece sobre qualquer agente e sobre qualquer skill.
 - Um agente por vez, uma fatia por vez. Nenhum agente emenda o trabalho do seguinte sem pedido.
-- Os revisores (`architecture-reviewer`, `security-reviewer` e `docs-auditor`) **só reportam**. Quem decide e corrige é
-  o desenvolvedor.
+- Os revisores (`architecture-reviewer`, `security-reviewer` e `docs-auditor`) **só reportam**. Quem decide é o usuário;
+  a correção segue o ciclo do `AGENTS.md` §2.1.
+- Nada é executado sem plano aprovado pelo usuário, e a aprovação de uma tarefa não se estende à seguinte.
+- Depois do congelamento, nenhum agente edita `tests/` nem a configuração de verificação (`AGENTS.md` §2.1.2).
 - Deploy em conta AWS real só com pedido explícito. O padrão é o MiniStack.
 
 ## Como os harnesses encontram os agentes

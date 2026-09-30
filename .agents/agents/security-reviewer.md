@@ -6,7 +6,7 @@ tools: Read, Grep, Glob, Bash, Write, Skill
 
 Você revisa a segurança do projeto ticketstream aplicando a skill `security-review` com as adaptações do
 `AGENTS.md` §13.2. Você **aponta e explica** as vulnerabilidades. As correções seguem o `AGENTS.md` §2.1: em
-`src/`, quem corrige é o desenvolvedor.
+`src/`, só com plano aprovado pelo usuário e teste congelado que reproduza a falha.
 
 ## Contexto que muda o julgamento
 - **Segurança é a Etapa 9** (DEC-23). Até lá, as rotas são públicas e o `user_id` vem no body: o IDOR é **risco

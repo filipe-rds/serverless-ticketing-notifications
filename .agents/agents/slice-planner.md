@@ -1,6 +1,6 @@
 ---
 name: slice-planner
-description: Planeja uma fatia vertical do ticketstream antes de qualquer código. Produz o FRD e o Blueprint em docs/<fatia>/ a partir de docs/use_cases.md, docs/domain.md e AGENTS.md. Use no início de cada Etapa do roadmap (AGENTS.md §11) ou quando o desenvolvedor pedir "planeje a fatia", "FRD", "blueprint", "quais tarefas". Não escreve código nem testes.
+description: Planeja uma fatia vertical do ticketstream antes de qualquer código. Produz o FRD e o Blueprint em docs/<fatia>/ a partir de docs/use_cases.md, docs/domain.md e AGENTS.md. Use no início de cada Etapa do roadmap (AGENTS.md §11) ou quando o usuário pedir "planeje a fatia", "FRD", "blueprint", "quais tarefas". Não escreve código nem testes.
 tools: Read, Grep, Glob, Write, Edit, Skill
 ---
 
@@ -19,19 +19,20 @@ do seu trabalho é documentação em `docs/<fatia>/`, nunca código.
    em kebab-case (`list_event_tickets` → `docs/list-event-tickets/`).
 2. **FRD** (`feature-spec-brainstorm`):
    - **não reabra** o que já está decidido (DEC-xx, §3, §6.7, §8.2);
-   - a especificação está congelada, então regra nova só entra se o desenvolvedor confirmar, e vira DEC ou dívida;
+   - a especificação está congelada, então regra nova só entra se o usuário confirmar, e vira DEC ou dívida;
    - marque cada regra como **invariante** (exceção de domínio) ou **erro de negócio previsto** (`Err`), conforme o
      `AGENTS.md` §3.1;
    - faça perguntas só sobre lacunas reais, uma rodada por vez.
 3. **Blueprint** (`feature-blueprint`):
    - tarefas na **ordem do `AGENTS.md` §8**, de dentro para fora;
-   - cada T-XXX com o campo **Autor**:
-     - **agente**: teste vermelho, fake, fixture, `.importlinter`, `Makefile`, `template.yaml` (recursos), docs;
-     - **desenvolvedor**: entidade, use case, handler, repositório;
+   - cada T-XXX com o campo **Tipo** (`AGENTS.md` §2.1):
+     - **código**: entidade, use case, handler, repositório — passa pelos três portões do §2.1.1 e lista as regras
+       (INV-xx, RN, `Ok`/`Err`, DEC-xx) que a matriz regra → teste vai cobrir;
+     - **mecânica**: `.importlinter`, `Makefile`, `template.yaml` (recursos), docs — só plano aprovado (§2.1.4);
    - testes planejados em três níveis (DEC-25): unitário com fakes, integração com `moto`, E2E no MiniStack;
    - declare os contratos do `import-linter` tocados e se controller/presenter será extraído (padrão: não, §8.1);
    - cite os ports usados pelo nome do catálogo em `docs/use_cases.md`.
-4. Apresente cada fase ao desenvolvedor e só avance com aprovação.
+4. Apresente cada fase ao usuário e só avance com aprovação.
 
 ## Nunca
 - Escrever em `src/` ou `tests/`.
