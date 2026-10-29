@@ -391,6 +391,52 @@ Rule of thumb:
 - if this should never happen when the core is used correctly, raise an exception
 - if this is caused by an external technical detail, keep it in infrastructure
 
+### Every use case returns a `Result`
+
+`execute` always returns `Result[Response, Error]`, even when the use case has no expected failure. This keeps one contract for every
+caller and lets the first expected failure be added later without changing the signature.
+
+When there is no expected failure, declare the error type as `Never`:
+
+```python
+# Listing an empty catalog is success (total=0), not a failure.
+# Technical failures (e.g. database down) are raised, not returned as Err.
+type ListEventsError = Never
+type ListEventsResult = Result[ListEventsResponse, ListEventsError]
+
+
+class ListEvents:
+    def __init__(self, event_repository: EventRepositoryPort) -> None:
+        self._event_repository = event_repository
+
+    def execute(self, request: ListEventsRequest) -> ListEventsResult:
+        summaries = tuple(_to_summary(event) for event in self._event_repository.find_all())
+        return Ok(ListEventsResponse(events=summaries, total=len(summaries)))
+```
+
+With several expected failures, declare them as a union:
+
+```python
+type ReserveTicketsError = EventNotFound | InsufficientReservableQuantity | UserReservationLimitExceeded
+type ReserveTicketsResult = Result[ReserveTicketsResponse, ReserveTicketsError]
+```
+
+Consumers (presenters) must match exhaustively and close with `assert_never`, so the type checker flags any error that is not handled:
+
+```python
+def present_list_events(result: ListEventsResult) -> HttpResponse:
+    match result:
+        case Ok(response):
+            return HttpResponse(200, {...})
+        case Err(error):
+            assert_never(error)
+```
+
+Not every invalid input is an `Err`:
+
+- malformed input shape (e.g. `"abc"` where a UUID is expected) is rejected at the delivery edge, before the use case is called
+- input that is well-formed but rejected by a business rule (e.g. quantity above the per-user limit) is an `Err`
+
 ---
 
 ## Exception policy
@@ -495,8 +541,10 @@ ticketing/infrastructure/
 ├── composition/
 │   ├── __init__.py      # def ticketing_modules() -> list[Module]
 │   ├── persistence.py   # ports → repositories
-│   └── use_cases.py     # use cases and controllers
-└── http/app.py          # entrypoint: builds the DependencyResolver
+│   └── use_cases.py     # use cases (each receives only the ports it needs)
+└── http/
+    ├── events_routes.py # build_events_router(...)
+    └── app.py           # entrypoint: builds the DependencyResolver and the app
 
 shared/infrastructure/composition/
 ├── dependency_resolver.py  # DependencyResolver (wraps Injector)
@@ -544,8 +592,8 @@ class TicketingUseCases(Module):
         return ListEvents(repository)
 
     @provider
-    def list_events_controller(self, use_case: ListEvents) -> ListEventsController:
-        return ListEventsController(use_case)
+    def list_event_tickets(self, repository: EventRepositoryPort) -> ListEventTickets:
+        return ListEventTickets(repository)
 
 
 # ticketing/infrastructure/composition/__init__.py
@@ -559,9 +607,14 @@ def create_resolver(*overrides: Installable) -> DependencyResolver:
 
 
 def build_app(resolver: DependencyResolver) -> APIGatewayRestResolver:
-    app = APIGatewayRestResolver()
-    list_events = resolver.resolve(ListEventsController)  # resolve only here
-    ...
+    app = create_http_app()
+    app.include_router(
+        build_events_router(
+            list_events=resolver.resolve(ListEvents),  # resolve only here
+            list_event_tickets=resolver.resolve(ListEventTickets),
+        ),
+        prefix="/events",
+    )
     return app
 
 
@@ -578,7 +631,7 @@ would need `@inject`, which this project forbids. Therefore:
 | Ready-made value keyed by a concrete class (e.g. settings) | `binder.bind(Settings, to=instance)`                       |
 | Ready-made value keyed by a port (`Protocol`)              | `binder.bind(Port, to=InstanceProvider(instance))`         |
 | Class with no constructor arguments                        | `binder.bind(Port, to=SomeClass, scope=...)`               |
-| Class with dependencies (use case, controller, repository) | `@provider`                                                |
+| Class with dependencies (use case, repository)             | `@provider`                                                |
 | Test override                                              | function module: `lambda binder: binder.bind(...)`         |
 
 Ports are plain `Protocol`s. Binding one directly to an instance (`to=instance`) fails at runtime, because `injector` runs an `isinstance`
@@ -606,14 +659,18 @@ app = build_app(Injector([Aws(), *ticketing_modules()]))
 
 
 # ❌ Resolver passed inward (Service Locator): hidden dependencies
-class ListEventsController:
+class ListEvents:
     def __init__(self, resolver: DependencyResolver) -> None: ...
+
+
+# ❌ Router resolving its own dependencies: also a Service Locator
+def build_events_router(resolver: DependencyResolver) -> Router: ...
 ```
 
 ### Lifecycle
 
 - `@singleton` for SDK clients, tables, and repositories (reused across warm invocations)
-- default scope for stateless use cases and controllers
+- default scope for stateless use cases
 
 ### Testing
 
@@ -627,7 +684,7 @@ class ListEventsController:
   )
   ```
 
-- for each entrypoint, keep a test that resolves every controller, so a missing binding fails in CI, not at runtime
+- for each entrypoint, keep a test that resolves every use case it wires, so a missing binding fails in CI, not at runtime
 - architectural tests must forbid the DI library in `domain`, `application`, and `adapters`
 
 ---
@@ -660,6 +717,77 @@ As a default architectural rule:
 - external delivery code should not bypass use cases for normal business flows
 
 If an exception is made, it must be justified explicitly.
+
+### HTTP delivery convention (current tool: Powertools)
+
+This is a **project convention** — a deliberate partial boundary to avoid one controller class per use case.
+
+- one Lambda per bounded context; one Powertools `Router` per resource (`events_routes.py`, `reservations_routes.py`)
+- routes play the controller role: they receive already-validated input, build the request model, call the use case, and pass the
+  `Result` to a presenter
+- the Lambda event (or any delivery payload) **never** reaches `execute`; use cases receive request models only
+- routers are built by factory functions that receive their use cases explicitly, typed by the `UseCase` protocol; never a module-level
+  router that resolves its own dependencies
+- presenters are pure functions grouped **per resource** in `<context>/adapters/http/<resource>_presenter.py`; they translate `Result` to
+  `HttpResponse` (a framework-neutral view model in `shared/adapters/http_response.py`) and never import the framework
+- `shared/infrastructure/http/powertools.py` provides `create_http_app()` and `to_powertools_response()`; every HTTP entrypoint uses them
+
+```
+ticketing/
+├── adapters/http/events_presenter.py      # present_list_events(result) -> HttpResponse
+└── infrastructure/http/
+    ├── events_routes.py                   # build_events_router(list_events, list_event_tickets) -> Router
+    └── app.py                             # lambda_handler; include_router(..., prefix="/events")
+```
+
+```python
+# ticketing/infrastructure/http/events_routes.py
+def build_events_router(
+    list_events: UseCase[ListEventsRequest, ListEventsResult],
+    list_event_tickets: UseCase[ListEventTicketsRequest, ListEventTicketsResult],
+) -> Router:
+    router = Router()
+
+    @router.get("/")
+    def list_events_route():
+        result = list_events.execute(ListEventsRequest())
+        return to_powertools_response(present_list_events(result))
+
+    @router.get("/<event_id>/tickets")
+    def list_event_tickets_route(event_id: UUID):  # Powertools converts and validates str -> UUID
+        result = list_event_tickets.execute(ListEventTicketsRequest(event_id=event_id))
+        return to_powertools_response(present_list_event_tickets(result))
+
+    return router
+```
+
+`create_http_app()` must:
+
+- enable `enable_validation=True`, so input shape is validated from route annotations
+- map `RequestValidationError` to `400` in the project's error format
+- map `ServiceError` (framework HTTP errors such as unknown route) to its own status code — without this handler, the generic one below
+  turns a `404` for an unknown route into a `500`
+- map any other `Exception` to `500`, log it, and never leak internal details in the response body
+
+Known pitfall: with `enable_validation=True`, route functions must **not** annotate the return as `-> Response`; Powertools tries to build
+a Pydantic schema from it and fails with `PydanticSchemaGenerationError`.
+
+Pydantic models used to validate request bodies belong to `infrastructure`; the route converts them into the use case's request model
+(a plain dataclass).
+
+Avoid:
+
+```python
+# ❌ Lambda event crossing into the use case
+class ListEventTickets:
+    def execute(self, request: dict) -> ...:
+        event_id = request["pathParameters"]["event_id"]
+
+
+# ❌ Use case producing HTTP
+def execute(self, request: ListEventsRequest) -> dict:
+    return {"statusCode": 200, "body": ...}
+```
 
 ---
 
@@ -825,6 +953,8 @@ Do not:
 - propose large rewrites as a first option
 - import the DI library outside `infrastructure`
 - pass the DI container (or a resolver) into inner layers
+- pass the Lambda event (or any delivery payload) to a use case's `execute`
+- return a bare response from `execute` instead of a `Result`
 
 ---
 
